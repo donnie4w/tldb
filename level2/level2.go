@@ -674,33 +674,63 @@ func (this *level2) Delete(call int, ts *TableStub) (err error) {
 		return
 	}
 	idxDelMap := make(map[string][]byte, 0)
+	dels := make([]string, 0)
 	if ts.ID > 0 {
-		_id_key := KeyLevel2.SeqKey(ts.Tablename, ts.ID)
-		this.strLock.Lock(_id_key)
-		defer this.strLock.Unlock(_id_key)
-		if level1.Level1.Has(_id_key) {
-			dels := make([]string, 0)
-			dels = append(dels, _id_key)
-			_pte_key := KeyLevel2.PteToIdxStub(ts.Tablename, ts.ID)
-			if bs, err := level1.Level1.GetLocal(_pte_key); err == nil && bs != nil {
-				is := decode2IdxStub(bs)
-				for _, _idx_key := range is.IdxMap {
-					dels = append(dels, _idx_key)
-					idxDelMap[KeyLevel3.SeqForDel(fmt.Sprint(atomic.AddInt64(&sys.MAXDELSEQ, 1)))] = []byte(_idx_key)
-					idxDelMap[KeyLevel3.KeyMaxDelSeq()] = Int64ToBytes(*&sys.MAXDELSEQ)
-				}
-				dels = append(dels, _pte_key)
+		// _id_key := KeyLevel2.SeqKey(ts.Tablename, ts.ID)
+		// this.strLock.Lock(_id_key)
+		// defer this.strLock.Unlock(_id_key)
+		// if level1.Level1.Has(_id_key) {
+		// 	dels := make([]string, 0)
+		// 	dels = append(dels, _id_key)
+		// 	_pte_key := KeyLevel2.PteToIdxStub(ts.Tablename, ts.ID)
+		// 	if bs, err := level1.Level1.GetLocal(_pte_key); err == nil && bs != nil {
+		// 		is := decode2IdxStub(bs)
+		// 		for _, _idx_key := range is.IdxMap {
+		// 			dels = append(dels, _idx_key)
+		// 			idxDelMap[KeyLevel3.SeqForDel(fmt.Sprint(atomic.AddInt64(&sys.MAXDELSEQ, 1)))] = []byte(_idx_key)
+		// 			idxDelMap[KeyLevel3.KeyMaxDelSeq()] = Int64ToBytes(*&sys.MAXDELSEQ)
+		// 		}
+		// 		dels = append(dels, _pte_key)
+		// 	}
+		// 	if err == nil {
+		// 		if err = level1.Level1.Batch(3, nil, dels); err == nil {
+		// 			go level0.Level0.Batch(idxDelMap, nil)
+		// 		}
+		// 	}
+		// } else {
+		// 	err = Errors(sys.ERR_DATA_NOEXIST)
+		// }
+		if err = this._delete(ts.Tablename, ts.ID, idxDelMap, dels); err == nil && len(dels) > 0 {
+			if err = level1.Level1.Batch(3, nil, dels); err == nil {
+				go level0.Level0.Batch(idxDelMap, nil)
 			}
-			if err == nil {
-				if err = level1.Level1.Batch(3, nil, dels); err == nil {
-					go level0.Level0.Batch(idxDelMap, nil)
-				}
-			}
-		} else {
-			err = Errors(sys.ERR_DATA_NOEXIST)
 		}
 	} else {
 		err = Errors(sys.ERR_NO_MATCH_PARAM)
+	}
+	return
+}
+
+func (this *level2) _delete(tablename string, id int64, idxDelMap map[string][]byte, dels []string) (err error) {
+	_id_key := KeyLevel2.SeqKey(tablename, id)
+	this.strLock.Lock(_id_key)
+	defer this.strLock.Unlock(_id_key)
+	if level1.Level1.Has(_id_key) {
+		dels := make([]string, 0)
+		dels = append(dels, _id_key)
+		_pte_key := KeyLevel2.PteToIdxStub(tablename, id)
+		var bs []byte
+		if bs, err = level1.Level1.GetLocal(_pte_key); err == nil && bs != nil {
+			is := decode2IdxStub(bs)
+			for _, _idx_key := range is.IdxMap {
+				dels = append(dels, _idx_key)
+				idxDelMap[KeyLevel3.SeqForDel(fmt.Sprint(atomic.AddInt64(&sys.MAXDELSEQ, 1)))] = []byte(_idx_key)
+				idxDelMap[KeyLevel3.KeyMaxDelSeq()] = Int64ToBytes(*&sys.MAXDELSEQ)
+			}
+			dels = append(dels, _pte_key)
+		}
+	} else {
+		err = Errors(sys.ERR_DATA_NOEXIST)
 	}
 	return
 }
@@ -906,6 +936,42 @@ func (this *level2) LoadMQTableInfo() (tss []*TableStub) {
 				}
 			}
 		}
+	}
+	return
+}
+
+// delete
+func (this *level2) DeleteBatches(call int, tablename string, fromId, toId int64) (err error) {
+	defer myRecovr()
+	defer this.pLock.Unlock()
+	if err = this.pLock.Lock(); err != nil {
+		return
+	}
+	if level1.IsClusRun() && !sys.IsRUN() {
+		if tp, exec := level1.BroadcastProxy(&TableParam{TableName: tablename, Start: fromId, Limit: toId - fromId}, 0, 18, 1); tp != nil && exec.Error() == nil {
+			if tp.Err != "" {
+				err = errors.New(tp.Err)
+			}
+		} else {
+			err = Errors(sys.ERR_PROXY)
+		}
+		return
+	}
+	idxDelMap := make(map[string][]byte, 0)
+	dels := make([]string, 0)
+	if toId-fromId > 0 {
+		for i := fromId; i <= toId; i++ {
+			if err = this._delete(tablename, i, idxDelMap, dels); err != nil {
+				break
+			}
+		}
+		if err == nil && len(dels) > 0 {
+			if err = level1.Level1.Batch(3, nil, dels); err == nil {
+				go level0.Level0.Batch(idxDelMap, nil)
+			}
+		}
+	} else {
+		err = Errors(sys.ERR_NO_MATCH_PARAM)
 	}
 	return
 }
