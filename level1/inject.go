@@ -24,5 +24,5 @@ var CreateTableMq func(ts *TableStub) (err error)
 var DropTable func(ts *TableStub) (err error)
 var LoadTableInfo func() (tss []*TableStub)
 var LoadMQTableInfo func() (tss []*TableStub)
-
+var DeleteBatches func(call int, tablename string, fromId, toId int64) (err error)
 var ClusPub func(mqType int8, bs []byte) (err error)
