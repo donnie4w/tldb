@@ -41,6 +41,7 @@ func init() {
 	level1.DropTable = Level2.DropTable
 	level1.LoadTableInfo = Level2.LoadTableInfo
 	level1.LoadMQTableInfo = Level2.LoadMQTableInfo
+	level1.DeleteBatches = Level2.DeleteBatches
 	sys.Export = Level2.export
 	sys.CcGet = Level2.ccGet
 	sys.CcPut = Level2.ccPut
