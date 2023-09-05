@@ -524,6 +524,12 @@ func (this *ItnetServ) ProxyCall(ctx context.Context, syncId int64, paramData []
 					case 17:
 						tss := LoadMQTableInfo()
 						tp = &TableParam{StubArray: tss}
+					case 18:
+						err := DeleteBatches(1, tp.TableName, tp.Start, tp.Limit+tp.Start)
+						tp = &TableParam{}
+						if err != nil {
+							tp.Err = err.Error()
+						}
 					}
 					bs := util.TEncode(tp)
 					ackProxy(tc, tc.RemoteUuid, syncId, util.SnappyEncode(bs), pType)
