@@ -26,6 +26,7 @@ const (
 	MQ_SUBCANCEL byte = 12
 	MQ_CURRENTID byte = 13
 	MQ_ZLIB      byte = 14
+	MQ_JSON      byte = 15
 	MQ_ACK       byte = 0
 
 	MQ_ERROR_PUBBYTE   int64 = 1201 // 发布pubByte错误
