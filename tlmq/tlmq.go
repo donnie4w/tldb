@@ -61,6 +61,12 @@ func SetZlib(id int64, on bool) {
 	}
 }
 
+func SetJsonOn(id int64, on bool) {
+	if wss, ok := WsWare.Get(id); ok {
+		wss.SetJsonOn(on)
+	}
+}
+
 // ///////////////////////////////////////////
 func NewMqEngine() MqEg {
 	return &mqWare{NewMapL[string, *MapL[int64, byte]](), NewMapL[int64, *MapL[string, int8]](), &sync.Mutex{}}
@@ -159,10 +165,20 @@ func (this *mqWare) PubByte(mb *MqBean) (err error) {
 	buf.WriteByte(MQ_PUBBYTE)
 	buf.Write(bs)
 	if m, ok := this.subTopicMap.Get(mb.Topic); ok {
+		var jmbBuf *bytes.Buffer
 		m.Range(func(k int64, _ byte) bool {
 			if wss, ok := WsWare.Get(k); ok {
+				if wss.jsonOn {
+					if jmbBuf == nil {
+						jmbBuf = bytes.NewBuffer(append([]byte{MQ_PUBJSON}, JEncode(&JMqBean{mb.ID, mb.Topic, string(mb.Msg)})...))
+					}
+				}
 				util.GoPool.Go(func() {
-					wss.SendWithAck(buf)
+					if wss.jsonOn {
+						wss.SendWithAck(jmbBuf)
+					} else {
+						wss.SendWithAck(buf)
+					}
 				})
 			}
 			return true
@@ -280,6 +296,7 @@ type WsSock struct {
 	recvSec   time.Duration
 	mergeSize int8
 	zlibOn    bool
+	jsonOn    bool
 	mux       *sync.Mutex
 	ackMap    *LinkedMap[int64, []any]
 	// merge      Merge[*bytes.Buffer, *bytes.Buffer]
@@ -307,6 +324,10 @@ func (this *WsSock) SetMergeOn(size int8) {
 func (this *WsSock) SetZlib(zlib bool) {
 	this.zlibOn = zlib
 	// this.merge.SetZlib(zlib)
+}
+
+func (this *WsSock) SetJsonOn(on bool) {
+	this.jsonOn = on
 }
 
 func (this *WsSock) AckTimer() {
