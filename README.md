@@ -69,7 +69,7 @@
 
 ### download tldb
 
-1. [version 0.0.1](http://tlnet.top/download "version 0.0.1")
+1. [version 0.0.1](https://tlnet.top/download "version 0.0.1")
 
 
 ### tldb database client program：
