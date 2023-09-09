@@ -154,7 +154,7 @@ func mqHandler(hc *tlnet.HttpContext) {
 			}
 			AddConn(hc.WS, cliId)
 		} else {
-			sendErr(MQ_ERROR_NOPASS, hc.WS)
+			sendErr(bs[1:9], hc.WS)
 			hc.WS.Close()
 		}
 	case MQ_RECVACK:
@@ -166,13 +166,19 @@ func mqHandler(hc *tlnet.HttpContext) {
 		}
 		SetRecvAck(hc.WS.Id, sec)
 	case MQ_PUBBYTE:
-		if err := pubByte(bs[9:]); err != nil {
-			sendErr(MQ_ERROR_PUBBYTE, hc.WS)
+		if err, _ := pubByte(bs[9:]); err != nil {
+			sendErr(bs[1:9], hc.WS)
+		} else {
+			mqAck(bs[1:9], hc.WS)
 		}
+		return
 	case MQ_PUBJSON:
-		if err := pubJson(bs[9:]); err != nil {
-			sendErr(MQ_ERROR_PUBJSON, hc.WS)
+		if err, _ := pubJson(bs[9:]); err != nil {
+			sendErr(bs[1:9], hc.WS)
+		} else {
+			mqAck(bs[1:9], hc.WS)
 		}
+		return
 	case MQ_SUB:
 		sub(string(bs[9:]), 0, hc.WS)
 	case MQ_SUBCANCEL:
@@ -181,19 +187,19 @@ func mqHandler(hc *tlnet.HttpContext) {
 		if mb, err := pullByte(bs[9:]); err == nil {
 			MqWare.PullByte(mb, hc.WS.Id)
 		} else {
-			sendErr(MQ_ERROR_PULLBYTE, hc.WS)
+			sendErr(bs[1:9], hc.WS)
 		}
 	case MQ_PULLJSON:
 		if mb, err := pullJson(bs[9:]); err == nil {
 			MqWare.PullJson(mb, hc.WS.Id)
 		} else {
-			sendErr(MQ_ERROR_PULLJSON, hc.WS)
+			sendErr(bs[1:9], hc.WS)
 		}
 	case MQ_PING:
 		MqWare.Ping(bytes.NewBuffer(bs), hc.WS.Id)
 	case MQ_PUBMEM:
 		if err := pubMem(bs[9:]); err != nil {
-			sendErr(MQ_ERROR_PUBMEM, hc.WS)
+			sendErr(bs[1:9], hc.WS)
 		}
 	case MQ_MERGE:
 		size := int8(60)
@@ -209,12 +215,18 @@ func mqHandler(hc *tlnet.HttpContext) {
 			on = true
 		}
 		SetZlib(hc.WS.Id, on)
+	case MQ_JSON:
+		on := false
+		if bs[9] == 1 {
+			on = true
+		}
+		SetJsonOn(hc.WS.Id, on)
 	case MQ_CURRENTID:
 		topic := string(bs[9:])
 		if seq, err := Level2.SelectId(0, &TableStub{Tablename: key.Topic(topic)}); err == nil {
 			MqWare.PullId(seq)
 		} else {
-			sendErr(MQ_ERROR_CURRENTID, hc.WS)
+			sendErr(bs[1:9], hc.WS)
 		}
 	case MQ_ACK:
 		if IsRecvAckOn(hc.WS.Id) {
@@ -223,11 +235,12 @@ func mqHandler(hc *tlnet.HttpContext) {
 		}
 	}
 	if bs[0] != MQ_PING && bs[0] != MQ_ACK {
-		ack := bs[1:9]
-		buf := util.BufferPool.Get(9)
-		buf.WriteByte(MQ_ACK)
-		buf.Write(ack)
-		MqWare.Ack(buf, hc.WS.Id)
+		// ack := bs[1:9]
+		// buf := util.BufferPool.Get(9)
+		// buf.WriteByte(MQ_ACK)
+		// buf.Write(ack)
+		// MqWare.Ack(buf, hc.WS.Id)
+		mqAck(bs[1:9], hc.WS)
 	}
 }
 
@@ -235,11 +248,18 @@ func isAuth(ws *tlnet.Websocket) bool {
 	return WsWare.Has(ws.Id)
 }
 
+func mqAck(bs []byte, ws *tlnet.Websocket) {
+	// buf := util.BufferPool.Get(9)
+	var buf bytes.Buffer
+	buf.WriteByte(MQ_ACK)
+	buf.Write(bs)
+	MqWare.Ack(&buf, ws.Id)
+}
+
 /******************************************************/
-func pubByte(bs []byte) (err error) {
+func pubByte(bs []byte) (err error, seq int64) {
 	mb := &MqBean{}
 	if _, err = MQDecode(bs, mb); err == nil {
-		var seq int64
 		if seq, err = saveTopic(mb.Topic, mb.Msg); err == nil && seq > 0 {
 			mb.ID = seq
 			MqWare.PubByte(mb)
@@ -249,10 +269,9 @@ func pubByte(bs []byte) (err error) {
 	return
 }
 
-func pubJson(bs []byte) (err error) {
+func pubJson(bs []byte) (err error, seq int64) {
 	var mb *JMqBean
 	if mb, err = JDecode(bs); err == nil {
-		var seq int64
 		if seq, err = saveTopic(mb.Topic, []byte(mb.Msg)); err == nil && seq > 0 {
 			mb.Id = seq
 			MqWare.PubJson(mb)
@@ -339,7 +358,6 @@ func mqAuth(msg string) (isAuth bool) {
 	return
 }
 
-func sendErr(errCode int64, ws *tlnet.Websocket) {
-	errbs := util.Int64ToBytes(errCode)
-	ws.Send(append([]byte{MQ_ERROR}, errbs...))
+func sendErr(errId []byte, ws *tlnet.Websocket) {
+	ws.Send(append([]byte{MQ_ERROR}, errId...))
 }
