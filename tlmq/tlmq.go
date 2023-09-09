@@ -28,13 +28,9 @@ func init() {
 var MqWare = NewMqEngine()
 
 var WsWare = NewMapL[int64, *WsSock]()
-var CliWare = NewMapL[int64, int64]()
 
 func AddConn(ws *tlnet.Websocket, cliId int64) {
 	WsWare.Put(ws.Id, NewWsSock(ws, cliId))
-	if cliId > 0 {
-		CliWare.Put(cliId, ws.Id)
-	}
 }
 
 func DelAckId(wsid, ackid int64) {
