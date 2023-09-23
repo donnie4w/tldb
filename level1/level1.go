@@ -11,6 +11,7 @@ import (
 
 	. "github.com/donnie4w/tldb/container"
 	. "github.com/donnie4w/tldb/level0"
+	. "github.com/donnie4w/tldb/lock"
 	"github.com/donnie4w/tldb/sys"
 	. "github.com/donnie4w/tldb/util"
 )
