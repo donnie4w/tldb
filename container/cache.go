@@ -12,31 +12,35 @@ import (
 
 type LruCache[T any] struct {
 	cache *lru.Cache
-	lock  *sync.RWMutex
+	lock  *sync.Mutex
 }
 
 func NewLruCache[T any](maxEntries int) *LruCache[T] {
-	return &LruCache[T]{cache: lru.New(maxEntries), lock: new(sync.RWMutex)}
+	return &LruCache[T]{cache: lru.New(maxEntries), lock: new(sync.Mutex)}
 }
 
 func (this *LruCache[T]) Get(key lru.Key) (value T, b bool) {
-	defer myRecovr()
-	defer this.lock.RUnlock()
-	this.lock.RLock()
+	defer recover()
+	defer this.lock.Unlock()
+	this.lock.Lock()
 	if v, ok := this.cache.Get(key); ok {
-		value = v.(T)
+		if v != nil {
+			value = v.(T)
+		}
 		b = true
 	}
 	return
 }
 
 func (this *LruCache[T]) Remove(key lru.Key) {
+	defer recover()
 	defer this.lock.Unlock()
 	this.lock.Lock()
 	this.cache.Remove(key)
 }
 
 func (this *LruCache[T]) RemoveMulti(keys []string) {
+	defer recover()
 	defer this.lock.Unlock()
 	this.lock.Lock()
 	for _, k := range keys {
@@ -45,6 +49,7 @@ func (this *LruCache[T]) RemoveMulti(keys []string) {
 }
 
 func (this *LruCache[T]) Add(key lru.Key, value T) {
+	defer recover()
 	defer this.lock.Unlock()
 	this.lock.Lock()
 	this.cache.Add(key, value)
