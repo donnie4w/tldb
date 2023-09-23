@@ -76,20 +76,17 @@ func TestLinkedMap(t *testing.T) {
 }
 
 func TestSortMap(t *testing.T) {
-	// lm := NewSortMap[int64, int]()
-	// for i := 0; i < 100; i++ {
-	// 	go func() {
-	// 		for j := 0; j < 10000; j++ {
-	// 			lm.Put(time.Now().UnixMicro(), 0)
-	// 		}
-	// 	}()
-	// 	lm.DelAndLoadBack()
-	// 	lm.GetFrontKey()
-	// 	lm.BackForEach(func(k int64, v int) bool {
-	// 		return true
-	// 	})
-	// }
-	// time.Sleep(10 * time.Second)
+	lm := NewSortMap[int64, int]()
+	for i := 0; i < 100; i++ {
+		lm.Put(time.Now().UnixNano()+int64(i), 0)
+		// fmt.Println(lm.GetFrontKey())
+	}
+	lm.DelAndLoadBack()
+	lm.BackForEach(func(k int64, v int) bool {
+		fmt.Println(k)
+		return true
+	})
+	// time.Sleep(4 * time.Second)
 }
 
 func TestLimitMap(t *testing.T) {
@@ -151,21 +148,63 @@ func Benchmark_Map(b *testing.B) {
 }
 
 func Benchmark_LinkedMap(b *testing.B) {
-	b.StopTimer()
 	m := NewLinkedMap[int, int]()
-	b.StartTimer()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		m.Put(i, i)
 	}
 }
 
 func Benchmark_LimitMap(b *testing.B) {
-	b.StopTimer()
-	m := NewLimitMap[int, int](1 << 20)
-	b.StartTimer()
+	m := NewLimitMap[int, int](1 << 10)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		m.Put(i, i)
 	}
+}
+
+func BenchmarkParallel_LimitMap(b *testing.B) {
+	m := NewLimitMap[int, int](1 << 16)
+	i := 0
+	j := 1
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i++
+			j++
+			m.Put(i, i)
+			// m.Put(j, j)
+		}
+	})
+	fmt.Println(i, " >> ", j, " >> ", m.count)
+}
+
+func Benchmark_LimitUnRepeatMap(b *testing.B) {
+	m := NewLimitMap[int, int](1 << 10)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Put(i, i)
+	}
+}
+
+func BenchmarkParallel_LimitUnRepeatMap(b *testing.B) {
+	m := NewLimitMap[int, int](1 << 16)
+	i := 0
+	j := 1
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i++
+			j++
+			m.Put(i, i)
+			m.Put(j, j)
+		}
+	})
+	fmt.Println(i, " >> ", j, " >> ", m.count)
+	k := int64(0)
+	m.m.Range(func(key, value any) bool {
+		k++
+		return true
+	})
+	fmt.Println(k == m.count)
 }
 
 func TestSwap(t *testing.T) {
@@ -186,7 +225,7 @@ func Test_fastLinkMap(t *testing.T) {
 	fm := NewFastLinkedMap[int64, int64]()
 	for i := int64(0); i <= 1000000; i++ {
 		go func(k int64) {
-			fm.Put(k, i)
+			fm.Put(k, k)
 		}(i)
 	}
 	<-time.After(5 * time.Second)
@@ -202,4 +241,123 @@ func Test_fastLinkMap(t *testing.T) {
 		return true
 	})
 	<-time.After(10 * time.Second)
+}
+
+func Benchmark_LRU(b *testing.B) {
+	m := NewLruCache[int64](1 << 20)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Add(i, int64(i))
+		m.Get(i)
+	}
+}
+
+func BenchmarkParallel_LRU(b *testing.B) {
+	m := NewLruCache[int64](1 << 20)
+	i := 0
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i++
+			m.Add(i, int64(i))
+			// m.Get(i)
+		}
+	})
+}
+
+func BenchmarkParallel_LinkedMap(b *testing.B) {
+	m := NewLinkedMap[int, int]()
+	i := 0
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i++
+			m.Put(i, i)
+			// m.Get(i)
+			// m.Del(i)
+		}
+	})
+}
+
+func BenchmarkParallel_MapL(b *testing.B) {
+	m := NewMapL[int, int]()
+	i := 0
+	j := 1
+	z := 10
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i++
+			j++
+			z++
+			m.Put(i, i)
+			m.Put(j, j)
+			m.Del(z)
+		}
+	})
+	fmt.Println(i, " >> ", j, " >> ", m.Len())
+	k := 0
+	m.Range(func(_ int, _ int) bool {
+		k++
+		return true
+	})
+	fmt.Println(k == int(m.Len()))
+}
+
+func BenchmarkSortMap(b *testing.B) {
+	lm := NewSortMap[int64, int]()
+	for i := 0; i < b.N; i++ {
+		lm.Put(time.Now().UnixNano()+int64(i), 0)
+		lm.BackForEach(func(k int64, v int) bool {
+			return true
+		})
+	}
+}
+
+func BenchmarkParallelSortMap(b *testing.B) {
+	lm := NewSortMap[int64, int]()
+	b.RunParallel(func(pb *testing.PB) {
+		i := 0
+		for pb.Next() {
+			i++
+			lm.Put(time.Now().UnixNano()+int64(i), 0)
+			// lm.DelAndLoadBack()
+			// lm.GetFrontKey()
+			lm.BackForEach(func(k int64, v int) bool {
+				return true
+			})
+		}
+	})
+}
+
+func Test_consistenthash(t *testing.T) {
+	h := NewConsistenthash(1000)
+	h.Add(1,2,3,4)
+	h.Del(1)
+	h.Add(4,5)
+	m := map[int64]int{}
+	for i := 0; i < 1000; i++ {
+		node := h.Get(int64(i))
+		if v, ok := m[node]; ok {
+			m[node] = v + 1
+		} else {
+			m[node] = 1
+		}
+	}
+	i:=0
+	h.m.Range(func(k uint64, v int64) bool {
+		i++
+		return true
+	})
+	fmt.Println(i)
+	fmt.Println(m)
+}
+
+func BenchmarkParallelconsistenthash(b *testing.B) {
+	h := NewConsistenthash(1 << 14)
+	h.Add(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	b.RunParallel(func(pb *testing.PB) {
+		i := 0
+		for pb.Next() {
+			i++
+			h.Get(int64(i))
+		}
+	})
 }
