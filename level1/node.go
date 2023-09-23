@@ -461,7 +461,7 @@ func (this *_nodeWare) broadcastMQ(mqType int8, bs []byte) {
 		uuidMap := make(map[int64]int8, 0)
 		this.tlMap.Range(func(k *tlContext, _ int8) bool {
 			if _, ok := uuidMap[k.RemoteUuid]; !ok {
-				GoPool.Go(func() { this.subMq(k.RemoteUuid, 0, mqType, bs, sys.ReadTimeout) })
+				GoPool.Go(func() { this.pubMq(k.RemoteUuid, 0, mqType, bs, sys.ReadTimeout) })
 				uuidMap[k.RemoteUuid] = 0
 			}
 			return true
@@ -469,7 +469,7 @@ func (this *_nodeWare) broadcastMQ(mqType int8, bs []byte) {
 	}
 }
 
-func (this *_nodeWare) subMq(uuid, sendId int64, mqType int8, bs []byte, timeout time.Duration) (err error) {
+func (this *_nodeWare) pubMq(uuid, sendId int64, mqType int8, bs []byte, timeout time.Duration) (err error) {
 	defer myRecovr()
 	c := 10
 	if sendId == 0 {
@@ -479,7 +479,7 @@ func (this *_nodeWare) subMq(uuid, sendId int64, mqType int8, bs []byte, timeout
 	for c > 0 {
 		c--
 		if tc := this.GetTlContext(uuid); tc != nil {
-			tc.Conn.SubMq(context.Background(), sendId, mqType, bs)
+			tc.Conn.PubMq(context.Background(), sendId, mqType, bs)
 			ch := await.Get(sendId)
 			select {
 			case <-ch:
@@ -676,6 +676,58 @@ func (this *_nodeWare) proxyCall(exce *sys.Exception, uuid int64, paramData []by
 		}
 	} else {
 		exce.Code = sys.ERR_NODE_NOFOUND
+	}
+	return
+}
+
+func (this *_nodeWare) broadToken(exce *sys.Exception, sendId, uuid int64, tt *TokenTrans, ack bool, wg *sync.WaitGroup) (_r *TokenTrans) {
+	defer myRecovr()
+	if uuid == sys.UUID {
+		return
+	}
+
+	limit := 30
+	var err error
+	for limit > 0 {
+		err = nil
+		limit--
+		if sendId == 0 {
+			sendId = newTxId()
+		} else if !ack {
+			sendId = newTxId()
+		}
+		tt.SyncId = &sendId
+		if tc := this.GetTlContext(uuid); tc != nil {
+			err = tc.Conn.BroadToken(context.Background(), sendId, tt, ack)
+		}
+		if !ack {
+			ch := awaitToken.Get(sendId)
+			defer awaitToken.DelAndClose(sendId)
+			select {
+			case _r = <-ch:
+				goto END
+			case <-time.After(sys.ReadTimeout):
+				err = Errors(sys.ERR_TIMEOUT)
+			}
+		} else {
+			ch := await.Get(sendId)
+			defer await.DelAndClose(sendId)
+			select {
+			case <-ch:
+				goto END
+			case <-time.After(sys.ReadTimeout):
+				err = Errors(sys.ERR_TIMEOUT)
+			}
+		}
+
+	}
+END:
+	if wg != nil {
+		wg.Done()
+	}
+	if err != nil && exce != nil {
+		exce.Code = sys.ERR_TIMEOUT
+		exce.Put(uuid)
 	}
 	return
 }
