@@ -10,7 +10,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/donnie4w/gothrift/thrift"
+
+	// "github.com/apache/thrift/lib/go/thrift"
 	"github.com/donnie4w/tldb/log"
 	"github.com/donnie4w/tldb/sys"
 )
@@ -286,11 +288,11 @@ func (this *ItnetWrite) CommitTx2(ctx context.Context, syncId int64, txid int64,
 	return this.conn.CommitTx2(ctx, syncId, txid, commit)
 }
 
-func (this *ItnetWrite) SubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
+func (this *ItnetWrite) PubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
 	defer myRecovr()
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	return this.conn.SubMq(ctx, syncId, mqType, bs)
+	return this.conn.PubMq(ctx, syncId, mqType, bs)
 }
 
 func (this *ItnetWrite) PullData(ctx context.Context, syncId int64, ldb *LogDataBean) (_err error) {
@@ -312,4 +314,11 @@ func (this *ItnetWrite) ProxyCall(ctx context.Context, syncId int64, paramData [
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.ProxyCall(ctx, syncId, paramData, pType, ctype)
+}
+
+func (this *ItnetWrite) BroadToken(ctx context.Context, syncId int64, tt *TokenTrans, ack bool) (_err error) {
+	defer myRecovr()
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	return this.conn.BroadToken(ctx, syncId, tt, ack)
 }
