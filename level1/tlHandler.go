@@ -13,7 +13,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/donnie4w/gothrift/thrift"
+
+	// "github.com/apache/thrift/lib/go/thrift"
+	. "github.com/donnie4w/tldb/lock"
 	"github.com/donnie4w/tldb/log"
 	. "github.com/donnie4w/tldb/util"
 )
