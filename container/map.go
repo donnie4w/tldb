@@ -6,6 +6,8 @@ package container
 
 import (
 	"container/list"
+	"hash/crc64"
+	"sort"
 	"sync"
 	"sync/atomic"
 )
@@ -13,11 +15,10 @@ import (
 type MapL[K any, V any] struct {
 	m   sync.Map
 	len int64
-	mux *sync.Mutex
 }
 
 func NewMapL[K any, V any]() *MapL[K, V] {
-	return &MapL[K, V]{m: sync.Map{}, mux: &sync.Mutex{}}
+	return &MapL[K, V]{m: sync.Map{}}
 }
 
 func (this *MapL[K, V]) Put(key K, value V) {
@@ -28,7 +29,10 @@ func (this *MapL[K, V]) Put(key K, value V) {
 
 func (this *MapL[K, V]) Get(key K) (_r V, b bool) {
 	if v, ok := this.m.Load(key); ok {
-		_r, b = v.(V), ok
+		if v != nil {
+			_r = v.(V)
+		}
+		b = true
 	}
 	return
 }
@@ -38,17 +42,21 @@ func (this *MapL[K, V]) Has(key K) (ok bool) {
 	return
 }
 
-func (this *MapL[K, V]) Del(key K) {
-	this.mux.Lock()
-	defer this.mux.Unlock()
-	if _, ok := this.m.LoadAndDelete(key); ok {
+func (this *MapL[K, V]) Del(key K) (ok bool) {
+	if _, ok = this.m.LoadAndDelete(key); ok {
 		atomic.AddInt64(&this.len, -1)
 	}
+	return
 }
 
 func (this *MapL[K, V]) Range(f func(k K, v V) bool) {
 	this.m.Range(func(k, v any) bool {
-		return f(k.(K), v.(V))
+		if v != nil {
+			return f(k.(K), v.(V))
+		} else {
+			var t V
+			return f(k.(K), t)
+		}
 	})
 }
 
@@ -65,16 +73,26 @@ func NewMap[K any, V any]() *Map[K, V] {
 	return &Map[K, V]{m: sync.Map{}}
 }
 
-func (this *Map[K, V]) Put(key K, value V) (v V, loaded bool) {
-	if previous, ok := this.m.Swap(key, value); ok {
-		v, loaded = previous.(V), ok
+func (this *Map[K, V]) Put(key K, value V) {
+	this.m.Swap(key, value)
+}
+
+func (this *Map[K, V]) Swap(key K, value V) (v V, ok bool) {
+	if previous, loaded := this.m.Swap(key, value); loaded {
+		if previous != nil {
+			v = previous.(V)
+		}
+		ok = true
 	}
 	return
 }
 
-func (this *Map[K, V]) Get(key K) (_r V, b bool) {
-	if v, ok := this.m.Load(key); ok {
-		_r, b = v.(V), ok
+func (this *Map[K, V]) Get(key K) (v V, b bool) {
+	if e, ok := this.m.Load(key); ok {
+		if e != nil {
+			v = e.(V)
+		}
+		b = ok
 	}
 	return
 }
@@ -84,16 +102,19 @@ func (this *Map[K, V]) Has(key K) (ok bool) {
 	return
 }
 
-func (this *Map[K, V]) Del(key K) (v V, ok bool) {
-	if e, loaded := this.m.LoadAndDelete(key); loaded {
-		v, ok = e.(V), loaded
-	}
+func (this *Map[K, V]) Del(key K) (ok bool) {
+	_, ok = this.m.LoadAndDelete(key)
 	return
 }
 
 func (this *Map[K, V]) Range(f func(k K, v V) bool) {
 	this.m.Range(func(k, v any) bool {
-		return f(k.(K), v.(V))
+		if v != nil {
+			return f(k.(K), v.(V))
+		} else {
+			var t V
+			return f(k.(K), t)
+		}
 	})
 }
 
@@ -126,7 +147,11 @@ func (this *SortMap[K, V]) GetFrontKey() (k K, ok bool) {
 	defer this.mux.RUnlock()
 	this.mux.RLock()
 	if e := this.l.Front(); e != nil {
-		k, ok = e.Value.(K), true
+		if e.Value != nil {
+			k, ok = e.Value.(K), true
+		} else {
+			ok = true
+		}
 	}
 	return
 }
@@ -135,9 +160,11 @@ func (this *SortMap[K, V]) FrontForEach(f func(k K, v V) bool) {
 	defer this.mux.RUnlock()
 	this.mux.RLock()
 	for e := this.l.Front(); e != nil; e = e.Next() {
-		k := e.Value.(K)
-		if v, ok := this.m.Get(k); !ok || !f(k, v) {
-			break
+		if e.Value != nil {
+			k := e.Value.(K)
+			if v, ok := this.m.Get(k); !ok || !f(k, v) {
+				break
+			}
 		}
 	}
 }
@@ -146,9 +173,11 @@ func (this *SortMap[K, V]) BackForEach(f func(k K, v V) bool) {
 	defer this.mux.RUnlock()
 	this.mux.RLock()
 	for e := this.l.Back(); e != nil; e = e.Prev() {
-		k := e.Value.(K)
-		if v, ok := this.m.Get(k); !ok || !f(k, v) {
-			break
+		if e.Value != nil {
+			k := e.Value.(K)
+			if v, ok := this.m.Get(k); !ok || !f(k, v) {
+				break
+			}
 		}
 	}
 }
@@ -165,9 +194,11 @@ func (this *SortMap[K, V]) DelAndLoadBack() (k K, v V) {
 	this.mux.Lock()
 	if e := this.l.Back(); e != nil {
 		this.l.Remove(e)
-		k = e.Value.(K)
-		v, _ = this.m.Get(k)
-		this.m.Del(k)
+		if e.Value != nil {
+			k = e.Value.(K)
+			v, _ = this.m.Get(k)
+			this.m.Del(k)
+		}
 	}
 	return
 }
@@ -190,15 +221,13 @@ func NewLinkedMap[K, V any]() *LinkedMap[K, V] {
 func (this *LinkedMap[K, V]) Put(k K, v V) {
 	defer this.mux.Unlock()
 	this.mux.Lock()
-	// if e, ok := this.m.Get(k); ok {
-	// 	this.l.Remove(e)
-	// }
-	if e, ok := this.m.Put(k, this.l.PushFront([]any{k, v})); ok {
+	if e, ok := this.m.Swap(k, this.l.PushFront([]any{k, v})); ok {
 		this.l.Remove(e)
 	}
 }
 
 func (this *LinkedMap[K, V]) Get(key K) (v V, ok bool) {
+	defer recover()
 	if e, ok := this.m.Get(key); ok {
 		return e.Value.([]any)[1].(V), ok
 	}
@@ -259,6 +288,7 @@ func (this *LinkedMap[K, V]) Back() (k K) {
 }
 
 func (this *LinkedMap[K, V]) Front() (k K) {
+	defer recover()
 	defer this.mux.Unlock()
 	this.mux.Lock()
 	if e := this.l.Front(); e != nil && e.Value != nil {
@@ -268,6 +298,7 @@ func (this *LinkedMap[K, V]) Front() (k K) {
 }
 
 func (this *LinkedMap[K, V]) BackForEach(f func(k K, v V) bool) {
+	defer recover()
 	for e := this.l.Back(); e != nil; e = e.Prev() {
 		if e.Value != nil {
 			es := e.Value.([]any)
@@ -279,6 +310,7 @@ func (this *LinkedMap[K, V]) BackForEach(f func(k K, v V) bool) {
 }
 
 func (this *LinkedMap[K, V]) FrontForEach(f func(k K, v V) bool) {
+	defer recover()
 	for e := this.l.Front(); e != nil; e = e.Next() {
 		if e.Value != nil {
 			es := e.Value.([]any)
@@ -312,7 +344,7 @@ func (this *FastLinkedMap[K, V]) RangeAndDelete(f func(id int64, k K, v V) bool)
 	for i := this.custor; i <= this.id; i++ {
 		if kv, ok := this.m.Get(i); ok {
 			if f(i, kv.k, kv.v) {
-				if _, ok := this.m.Del(i); ok {
+				if ok := this.m.Del(i); ok {
 					swapbig(&this.custor, i)
 				}
 			} else {
@@ -336,55 +368,169 @@ func swapbig(s *int64, new int64) {
 
 /************************************************************/
 
+// type LimitMap[K, V any] struct {
+// 	m1    *sync.Map
+// 	m2    *sync.Map
+// 	limit int64
+// 	count int64
+// }
+
+// func NewLimitMap[K, V any](limit int64) *LimitMap[K, V] {
+// 	return &LimitMap[K, V]{&sync.Map{}, &sync.Map{}, limit, 0}
+// }
+
+// func (this *LimitMap[K, V]) Put(k K, v V) {
+// 	c := atomic.AddInt64(&this.count, 1)
+// 	this.m1.Store(k, v)
+// 	this.m2.Store(k, v)
+// 	if c%int64(this.limit) == int64(this.limit)/2 {
+// 		this.m1 = &sync.Map{}
+// 	}
+// 	if c%int64(this.limit) == int64(this.limit)-1 {
+// 		this.m2 = &sync.Map{}
+// 	}
+// }
+
+// func (this *LimitMap[K, V]) Get(k K) (v V, b bool) {
+// 	c := this.count
+// 	if c%int64(this.limit) >= int64(this.limit)/2 && c%int64(this.limit) < int64(this.limit)-1 {
+// 		return this._get(k, this.m2)
+// 	} else {
+// 		return this._get(k, this.m1)
+// 	}
+// }
+
+// func (this *LimitMap[K, V]) _get(k K, m *sync.Map) (_r V, b bool) {
+// 	if v, ok := m.Load(k); ok {
+// 		_r, b = v.(V), ok
+// 	}
+// 	return
+// }
+
+// func (this *LimitMap[K, V]) _has(k K, m *sync.Map) (ok bool) {
+// 	_, ok = m.Load(k)
+// 	return
+// }
+
+// func (this *LimitMap[K, V]) Has(k K) (b bool) {
+// 	c := this.count
+// 	if c%int64(this.limit) >= int64(this.limit)/2 && c%int64(this.limit) < int64(this.limit)-1 {
+// 		return this._has(k, this.m2)
+// 	} else {
+// 		return this._has(k, this.m1)
+// 	}
+// }
+
+/*********************************************************/
+
 type LimitMap[K, V any] struct {
-	m1    *sync.Map
-	m2    *sync.Map
+	m     *sync.Map
+	ch    chan K
 	limit int64
 	count int64
 }
 
 func NewLimitMap[K, V any](limit int64) *LimitMap[K, V] {
-	return &LimitMap[K, V]{&sync.Map{}, &sync.Map{}, limit, 0}
+	return &LimitMap[K, V]{&sync.Map{}, make(chan K, limit), limit, 0}
 }
 
 func (this *LimitMap[K, V]) Put(k K, v V) {
-	c := atomic.AddInt64(&this.count, 1)
-	this.m1.Store(k, v)
-	this.m2.Store(k, v)
-	if c%int64(this.limit) == int64(this.limit)/2 {
-		this.m1 = &sync.Map{}
-	}
-	if c%int64(this.limit) == int64(this.limit)-1 {
-		this.m2 = &sync.Map{}
-	}
-}
-
-func (this *LimitMap[K, V]) Get(k K) (v V, b bool) {
-	c := this.count
-	if c%int64(this.limit) >= int64(this.limit)/2 && c%int64(this.limit) < int64(this.limit)-1 {
-		return this._get(k, this.m2)
-	} else {
-		return this._get(k, this.m1)
+	if _, ok := this.m.Swap(k, v); !ok {
+		if atomic.AddInt64(&this.count, 1) >= this.limit {
+			if _, ok := this.m.LoadAndDelete(<-this.ch); ok {
+				atomic.AddInt64(&this.count, -1)
+			}
+		}
+		this.ch <- k
 	}
 }
 
-func (this *LimitMap[K, V]) _get(k K, m *sync.Map) (_r V, b bool) {
-	if v, ok := m.Load(k); ok {
+func (this *LimitMap[K, V]) Get(k K) (_r V, b bool) {
+	if v, ok := this.m.Load(k); ok {
 		_r, b = v.(V), ok
 	}
 	return
 }
 
-func (this *LimitMap[K, V]) _has(k K, m *sync.Map) (ok bool) {
-	_, ok = m.Load(k)
+func (this *LimitMap[K, V]) Has(k K) (b bool) {
+	_, b = this.m.Load(k)
 	return
 }
 
-func (this *LimitMap[K, V]) Has(k K) (b bool) {
-	c := this.count
-	if c%int64(this.limit) >= int64(this.limit)/2 && c%int64(this.limit) < int64(this.limit)-1 {
-		return this._has(k, this.m2)
-	} else {
-		return this._has(k, this.m1)
+/***********************************************************/
+
+func int64ToBytes(n int64) (bs []byte) {
+	bs = make([]byte, 8)
+	for i := 0; i < 8; i++ {
+		bs[i] = byte(n >> (8 * (7 - i)))
+	}
+	return
+}
+
+func hash(bs []byte) uint64 {
+	return crc64.Checksum(bs, crc64.MakeTable(crc64.ECMA))
+}
+
+type Consistenthash struct {
+	replicas int
+	keys     []uint64
+	m        *Map[uint64, int64]
+	mux      *sync.RWMutex
+	_m       map[int64]int8
+}
+
+func NewConsistenthash(replicas int) (m *Consistenthash) {
+	m = &Consistenthash{
+		replicas: replicas,
+		m:        NewMap[uint64, int64](),
+		mux:      &sync.RWMutex{},
+		_m:       map[int64]int8{},
+	}
+	return m
+}
+
+func (this *Consistenthash) Add(keys ...int64) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	for _, key := range keys {
+		if _, ok := this._m[key]; !ok {
+			this._m[key] = 0
+			for i := 0; i < this.replicas; i++ {
+				h := hash(append(int64ToBytes(int64(i)), int64ToBytes(key)...))
+				this.keys = append(this.keys, h)
+				this.m.Put(h, key)
+			}
+		}
+	}
+	sort.Slice(this.keys, func(i, j int) bool { return this.keys[i] < this.keys[j] })
+}
+
+func (this *Consistenthash) Get(value int64) (node int64) {
+	this.mux.RLock()
+	defer this.mux.RUnlock()
+	keyu64 := hash(int64ToBytes(value))
+	idx := sort.Search(len(this.keys), func(i int) bool { return this.keys[i] >= keyu64 })
+	if idx >= len(this.keys) {
+		idx = 0
+	}
+	node, _ = this.m.Get(this.keys[idx])
+	return
+}
+
+func (this *Consistenthash) Del(key int64) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	if _, ok := this._m[key]; ok {
+		this.keys = this.keys[:0]
+		this.m.Range(func(k uint64, v int64) bool {
+			if v == key {
+				this.m.Del(k)
+			} else {
+				this.keys = append(this.keys, k)
+			}
+			return true
+		})
+		sort.Slice(this.keys, func(i, j int) bool { return this.keys[i] < this.keys[j] })
+		delete(this._m, key)
 	}
 }
