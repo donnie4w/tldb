@@ -13,13 +13,14 @@ import (
 	"time"
 
 	"github.com/donnie4w/tldb/keystore"
+	. "github.com/donnie4w/tldb/lock"
 	. "github.com/donnie4w/tldb/stub"
 	"github.com/donnie4w/tldb/sys"
 	"github.com/donnie4w/tldb/util"
 )
 
 type ItnetServ struct {
-	mux *util.Numlock
+	mux *Numlock
 }
 
 func ctx2TlContext(ctx context.Context) *tlContext {
@@ -363,7 +364,7 @@ func (this *ItnetServ) CommitTx2(ctx context.Context, syncId int64, txid int64, 
 	return
 }
 
-func (this *ItnetServ) SubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
+func (this *ItnetServ) PubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
 	f := func() {
 		defer myRecovr()
 		tc := ctx2TlContext(ctx)
@@ -545,6 +546,20 @@ func (this *ItnetServ) ProxyCall(ctx context.Context, syncId int64, paramData []
 		}
 	}
 	util.GoPool.Go(f)
+	return
+}
+
+func (this *ItnetServ) BroadToken(ctx context.Context, syncId int64, tt *TokenTrans, ack bool) (_err error) {
+	defer myRecovr()
+	tc := ctx2TlContext(ctx)
+	if tc.isAuth {
+		if ack {
+			awaitToken.DelAndPut(syncId, tt)
+			syncTxAck(tc, tc.RemoteUuid, syncId, 0)
+		} else {
+			go tokenroute.processTokenTrans(tt, tc.RemoteUuid)
+		}
+	}
 	return
 }
 
