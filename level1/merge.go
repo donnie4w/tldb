@@ -13,13 +13,13 @@ import (
 	"time"
 
 	. "github.com/donnie4w/tldb/container"
+	. "github.com/donnie4w/tldb/lock"
 	. "github.com/donnie4w/tldb/stub"
-	"github.com/donnie4w/tldb/util"
 )
 
 /*****************************************/
 var mergeSyncTxWare = NewMap[int64, Merge[*syncBean, map[int64]int8]]()
-var numlock = util.NewNumLock(1 << 6)
+var numlock = NewNumLock(1 << 6)
 
 type UUID int64
 
