@@ -8,7 +8,7 @@ package level1
 import (
 	. "github.com/donnie4w/tldb/key"
 	. "github.com/donnie4w/tldb/level0"
-	. "github.com/donnie4w/tldb/util"
+	. "github.com/donnie4w/tldb/lock"
 )
 
 var tsLockPool = NewTsLockPool()
