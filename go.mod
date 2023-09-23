@@ -1,12 +1,13 @@
 module github.com/donnie4w/tldb
 
-go 1.20
+go 1.21.0
 
 require (
-	github.com/apache/thrift v0.18.1
-	github.com/donnie4w/gofer v0.0.0-20230724071428-427cc9120b1a
-	github.com/donnie4w/simplelog v0.0.0-20230710163117-8113b51f4489
+	github.com/donnie4w/gofer v0.0.0-20230825155933-c845ade97180
+	github.com/donnie4w/gothrift v0.0.0-20230912113035-7477d6c3686e
+	github.com/donnie4w/simplelog v0.0.0-20230813073223-795779b98a18
 	github.com/donnie4w/tlnet v0.0.0-20230721173412-994d28cf49ab
+	github.com/donnie4w/tsf v0.0.0-20230826042304-1dedd5ef04c2
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/golang/snappy v0.0.4
 	github.com/shirou/gopsutil/v3 v3.23.6
@@ -16,6 +17,7 @@ require (
 )
 
 require (
+	github.com/apache/thrift v0.18.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230326075908-cb1d2100619a // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
