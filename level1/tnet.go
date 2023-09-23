@@ -14,6 +14,7 @@ import (
 
 	. "github.com/donnie4w/gofer/buffer"
 	"github.com/donnie4w/tldb/level0"
+	. "github.com/donnie4w/tldb/lock"
 	"github.com/donnie4w/tldb/log"
 	. "github.com/donnie4w/tldb/stub"
 	"github.com/donnie4w/tldb/sys"
@@ -54,7 +55,7 @@ func (this *tnetService) Serve(wg *sync.WaitGroup) (err error) {
 func (this *tnetService) _serve(wg *sync.WaitGroup, addr string) {
 	log.LoggerSys.Info(sys.SysLog(fmt.Sprint("service start[", addr, "] ns[", sys.NAMESPACE, "]")))
 	tnetserver := new(tnetServer)
-	tnetserver.handle(&ItnetServ{util.NewNumLock(64)}, myServer2ClientHandler, mySecvErrorHandler)
+	tnetserver.handle(&ItnetServ{NewNumLock(64)}, myServer2ClientHandler, mySecvErrorHandler)
 	go heardbeat()
 	tnetserver.Serve(wg, addr)
 }
@@ -74,7 +75,7 @@ func (this *tnetService) Connect(addr string, async bool) (err1, err2 error) {
 	}
 	logger.Info("connect >> ", addr)
 	tnetserver := new(tnetServer)
-	tnetserver.handle(&ItnetServ{util.NewNumLock(64)}, myClient2ServerHandler, myCliErrorHandler)
+	tnetserver.handle(&ItnetServ{NewNumLock(64)}, myClient2ServerHandler, myCliErrorHandler)
 	err2 = tnetserver.Connect(addr, async)
 	return
 }
