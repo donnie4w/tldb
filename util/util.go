@@ -296,7 +296,10 @@ func NewTxId() (txid int64) {
 	copy(b[0:8], Int64ToBytes(sys.UUID))
 	copy(b[8:], Int64ToBytes(Time().UnixNano()))
 	txid = int64(CRC32(b))
-	txid = txid<<31 | int64(inc()&0x0000ffff)
+	txid = txid<<32 | int64(int32(inc()))
+	if txid < 0 {
+		txid = -txid
+	}
 	return
 }
 
