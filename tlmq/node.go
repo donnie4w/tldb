@@ -9,7 +9,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/donnie4w/gothrift/thrift"
+	// "github.com/apache/thrift/lib/go/thrift"
 )
 
 func JEncode(mb *JMqBean) (bs []byte) {
