@@ -12,7 +12,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/donnie4w/gothrift/thrift"
+
+	// "github.com/apache/thrift/lib/go/thrift"
 	"github.com/golang/snappy"
 )
 
@@ -115,20 +117,18 @@ func BytesToIntArray(bs []byte) (data []int64) {
 var tconf = &thrift.TConfiguration{}
 
 func TEncode(ts thrift.TStruct) (_r []byte) {
-	buf := &thrift.TMemoryBuffer{Buffer: BufferPool.Get(128)}
-	tcf := thrift.NewTCompactProtocolFactoryConf(tconf)
-	tp := tcf.GetProtocol(buf)
-	ts.Write(context.Background(), tp)
+	buf := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer([]byte{})}
+	protocol := thrift.NewTCompactProtocolConf(buf, tconf)
+	ts.Write(context.Background(), protocol)
+	protocol.Flush(context.Background())
 	_r = buf.Bytes()
 	return
 }
 
 func TDecode[T thrift.TStruct](bs []byte, ts T) (_r T, err error) {
-	buf := thrift.NewTMemoryBuffer()
-	buf.Buffer = bytes.NewBuffer(bs)
-	tcf := thrift.NewTCompactProtocolFactoryConf(tconf)
-	tp := tcf.GetProtocol(buf)
-	err = ts.Read(context.Background(), tp)
+	buf := &thrift.TMemoryBuffer{Buffer: bytes.NewBuffer(bs)}
+	protocol := thrift.NewTCompactProtocolConf(buf, tconf)
+	err = ts.Read(context.Background(), protocol)
 	return ts, err
 }
 
