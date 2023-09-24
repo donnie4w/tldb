@@ -16,6 +16,7 @@ import (
 	. "github.com/donnie4w/tldb/key"
 	"github.com/donnie4w/tldb/level0"
 	"github.com/donnie4w/tldb/level1"
+	. "github.com/donnie4w/tldb/lock"
 	. "github.com/donnie4w/tldb/log"
 	. "github.com/donnie4w/tldb/stub"
 	"github.com/donnie4w/tldb/sys"
@@ -675,7 +676,6 @@ func (this *level2) Delete(call int, ts *TableStub) (err error) {
 		return
 	}
 	idxDelMap := make(map[string][]byte, 0)
-	dels := make([]string, 0)
 	if ts.ID > 0 {
 		// _id_key := KeyLevel2.SeqKey(ts.Tablename, ts.ID)
 		// this.strLock.Lock(_id_key)
@@ -701,7 +701,8 @@ func (this *level2) Delete(call int, ts *TableStub) (err error) {
 		// } else {
 		// 	err = Errors(sys.ERR_DATA_NOEXIST)
 		// }
-		if err = this._delete(ts.Tablename, ts.ID, idxDelMap, dels); err == nil && len(dels) > 0 {
+		var dels []string
+		if dels, err = this._delete(ts.Tablename, ts.ID, idxDelMap); err == nil && len(dels) > 0 {
 			if err = level1.Level1.Batch(3, nil, dels); err == nil {
 				go level0.Level0.Batch(idxDelMap, nil)
 			}
@@ -712,16 +713,14 @@ func (this *level2) Delete(call int, ts *TableStub) (err error) {
 	return
 }
 
-func (this *level2) _delete(tablename string, id int64, idxDelMap map[string][]byte, dels []string) (err error) {
+func (this *level2) _delete(tablename string, id int64, idxDelMap map[string][]byte) (dels []string, err error) {
 	_id_key := KeyLevel2.SeqKey(tablename, id)
 	this.strLock.Lock(_id_key)
 	defer this.strLock.Unlock(_id_key)
 	if level1.Level1.Has(_id_key) {
-		dels := make([]string, 0)
 		dels = append(dels, _id_key)
 		_pte_key := KeyLevel2.PteToIdxStub(tablename, id)
-		var bs []byte
-		if bs, err = level1.Level1.GetLocal(_pte_key); err == nil && bs != nil {
+		if bs, err := level1.Level1.GetLocal(_pte_key); err == nil && bs != nil {
 			is := decode2IdxStub(bs)
 			for _, _idx_key := range is.IdxMap {
 				dels = append(dels, _idx_key)
@@ -959,15 +958,15 @@ func (this *level2) DeleteBatches(call int, tablename string, fromId, toId int64
 		return
 	}
 	idxDelMap := make(map[string][]byte, 0)
-	dels := make([]string, 0)
+	delss := make([]string, 0)
 	if toId-fromId > 0 {
 		for i := fromId; i <= toId; i++ {
-			if err = this._delete(tablename, i, idxDelMap, dels); err != nil {
-				break
+			if dels, err := this._delete(tablename, i, idxDelMap); err == nil {
+				delss = append(delss, dels...)
 			}
 		}
-		if err == nil && len(dels) > 0 {
-			if err = level1.Level1.Batch(3, nil, dels); err == nil {
+		if err == nil && len(delss) > 0 {
+			if err = level1.Level1.Batch(3, nil, delss); err == nil {
 				go level0.Level0.Batch(idxDelMap, nil)
 			}
 		}
