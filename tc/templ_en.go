@@ -348,22 +348,24 @@ var dataEnText = `<html>
             <input type="submit" value="Query" />
         </form>
         <hr>
+        {{if ne .Sb.Name ""}}
         <h4>result：</h4>
-        <h3 class="important">{{ .Sb.Name }}</h3>
-        <table border="1">
-            <tr class="important" style="font-size: small;">
-                <th>table Id</th>
-                {{range $k,$v := .ColName }}
-                <th>field name</th>
-                <th>field value</th>
-                {{end}}
-            </tr>
+        <h6 class="text-danger">TABLENAME：{{ .Sb.Name }}</h6>
+        {{end}}
+        <table border="1" style="width: 100%;font-size: small;">
             {{range $k,$v := .Tds }}
+                {{if eq $k 0}}
+                <tr>
+                <th>ID</th>
+                {{range $k1,$v1 := $v.Columns }}
+                <th>{{ $k1 }}</th>
+                {{end}}
+                </tr>
+                {{end}}
             <tr>
                 <td>{{ $v.Id }}</td>
                 {{range $k1,$v1 := $v.Columns }}
-                <td>{{ $k1 }}</td>
-                <td><textarea readonly>{{ $v1 }}</textarea></td>
+                <td><textarea style="width: 100%;" readonly>{{ $v1 }}</textarea></td>
                 {{end}}
             </tr>
             {{end}}
@@ -708,18 +710,24 @@ var mqEnText = `<html>
             <input type="submit" value="Query" />
         </form>
         <hr>
+        {{if ne .Sb.Name ""}}
         <h4>result：</h4>
-        <h3 class="important">{{ .Sb.Name }}</h3>
-        <table border="1" style="width: 100%;">
-            <tr class="important" style="font-size: small;">
-                <th style="width: 45px;">ID</th>
-                <th>data content</th>
-            </tr>
+        <h6 class="text-danger">Topic：{{ .Sb.Name }}</h6>
+        {{end}}
+        <table border="1" style="width: 100%;font-size: small;">
             {{range $k,$v := .Tds }}
+                {{if eq $k 0}}
+                <tr>
+                <th>ID</th>
+                {{range $k1,$v1 := $v.Columns }}
+                <th>{{ $k1 }}</th>
+                {{end}}
+                </tr>
+                {{end}}
             <tr>
                 <td>{{ $v.Id }}</td>
                 {{range $k1,$v1 := $v.Columns }}
-                <td><textarea readonly style="width: 100%;">{{ $v1 }}</textarea></td>
+                <td><textarea style="width: 100%;" readonly>{{ $v1 }}</textarea></td>
                 {{end}}
             </tr>
             {{end}}
