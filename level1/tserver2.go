@@ -6,7 +6,6 @@
 package level1
 
 import (
-	"bytes"
 	"context"
 	"sync"
 
@@ -95,19 +94,19 @@ func (this *sockWork) processRequests(packet *Packet, processor Itnet) (err erro
 	ctx := this.tlcontext.defaultCtx
 	bs = bs[1+ln:]
 	switch method {
-	case _Ping:
+	case string(_Ping):
 		processor.Ping(ctx, util.BytesToInt64(bs))
-	case _Pong:
+	case string(_Pong):
 		processor.Pong(ctx, bs)
-	case _Auth:
+	case string(_Auth):
 		processor.Auth(ctx, bs)
-	case _Auth2:
+	case string(_Auth2):
 		processor.Auth2(ctx, bs)
-	case _Pon:
+	case string(_Pon):
 		id := util.BytesToInt64(bs[:8])
 		PonBeanBytes := bs[8:]
 		processor.Pon(ctx, PonBeanBytes, id)
-	case _Pon2:
+	case string(_Pon2):
 		id := util.BytesToInt64(bs[:8])
 		pb := &PonBean{}
 		if err := util.Decode(bs[8:], pb); err == nil {
@@ -115,18 +114,18 @@ func (this *sockWork) processRequests(packet *Packet, processor Itnet) (err erro
 		} else {
 			logger.Error(err)
 		}
-	case _Pon3:
+	case string(_Pon3):
 		id := util.BytesToInt64(bs[:8])
 		ack := byteToBool(bs[8:9][0])
 		pb := bs[9:]
 		processor.Pon3(ctx, pb, id, ack)
-	case _Time:
+	case string(_Time):
 		pretimenano := util.BytesToInt64(bs[:8])
 		timenano := util.BytesToInt64(bs[8 : 8+8])
 		num := util.BytesToInt16(bs[8+8 : 8+8+2])
 		ir := byteToBool(bs[8+8+2:][0])
 		processor.Time(ctx, pretimenano, timenano, num, ir)
-	case _SyncNode:
+	case string(_SyncNode):
 		ir := byteToBool(bs[0:1][0])
 		node := &Node{}
 		if err := util.Decode(bs[1:], node); err == nil {
@@ -134,24 +133,24 @@ func (this *sockWork) processRequests(packet *Packet, processor Itnet) (err erro
 		} else {
 			logger.Error(err)
 		}
-	case _SyncTx:
+	case string(_SyncTx):
 		syncId := util.BytesToInt64(bs[:8])
 		result := int8(bs[8:][0])
 		processor.SyncTx(ctx, syncId, result)
-	case _SyncTxMerge:
+	case string(_SyncTxMerge):
 		syncList := bytesToMap(bs)
 		processor.SyncTxMerge(ctx, syncList)
-	case _SubMq:
+	case string(_PubMq):
 		syncId := util.BytesToInt64(bs[:8])
 		mqType := int8(bs[8:9][0])
 		bs := bs[9:]
-		processor.SubMq(ctx, syncId, mqType, bs)
-	case _ReInit:
+		processor.PubMq(ctx, syncId, mqType, bs)
+	case string(_ReInit):
 		syncId := util.BytesToInt64(bs[:8])
 		sbean := &SysBean{}
 		util.Decode(bs[8:], sbean)
 		processor.ReInit(ctx, syncId, sbean)
-	case _PullData:
+	case string(_PullData):
 		syncId := util.BytesToInt64(bs[:8])
 		ldb := &LogDataBean{}
 		if err := util.Decode(bs[8:], ldb); err == nil {
@@ -159,12 +158,20 @@ func (this *sockWork) processRequests(packet *Packet, processor Itnet) (err erro
 		} else {
 			logger.Error(err)
 		}
-	case _ProxyCall:
+	case string(_ProxyCall):
 		syncId := util.BytesToInt64(bs[:8])
 		pType := int8(bs[8:9][0])
 		cType := int8(bs[9:10][0])
 		paramData := bs[10:]
 		processor.ProxyCall(ctx, syncId, paramData, pType, cType)
+	case string(_BroadToken):
+		syncId := util.BytesToInt64(bs[:8])
+		ack := false
+		if bs[8] == 1 {
+			ack = true
+		}
+		tt, _ := util.TDecode(bs[9:], &TokenTrans{})
+		processor.BroadToken(ctx, syncId, tt, ack)
 	}
 	return
 }
@@ -216,10 +223,11 @@ type ItnetImpl struct {
 	socket *TSocket
 }
 
-func method(name string) (buf bytes.Buffer) {
-	i := len([]byte(name))
+func method(name []byte) (buf *Buffer) {
+	buf = NewBuffer()
+	i := len(name)
 	buf.WriteByte(byte(i))
-	buf.WriteString(name)
+	buf.Write(name)
 	return
 }
 
@@ -265,7 +273,6 @@ func (this *ItnetImpl) PonMerge(ctx context.Context, pblist []*PonBean, id int64
 //   - Pb
 func (this *ItnetImpl) Pon(ctx context.Context, ponBeanBytes []byte, id int64) (_err error) {
 	buf := method(_Pon)
-
 	buf.Write(util.Int64ToBytes(id))
 	buf.Write(ponBeanBytes)
 
@@ -380,8 +387,8 @@ func (this *ItnetImpl) CommitTx2(ctx context.Context, syncId int64, txid int64, 
 	return
 }
 
-func (this *ItnetImpl) SubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
-	buf := method(_SubMq)
+func (this *ItnetImpl) PubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
+	buf := method(_PubMq)
 
 	buf.Write(util.Int64ToBytes(syncId))
 	buf.WriteByte(byte(mqType))
@@ -420,6 +427,19 @@ func (this *ItnetImpl) ProxyCall(ctx context.Context, syncId int64, paramData []
 	buf.WriteByte(byte(ctype))
 
 	buf.Write(paramData)
+	go this.socket.WriteWithMerge(buf.Bytes())
+	return
+}
+
+func (this *ItnetImpl) BroadToken(ctx context.Context, syncId int64, tt *TokenTrans, ack bool) (_err error) {
+	buf := method(_BroadToken)
+	buf.Write(util.Int64ToBytes(syncId))
+	if ack {
+		buf.WriteByte(1)
+	} else {
+		buf.WriteByte(0)
+	}
+	buf.Write(util.TEncode(tt))
 	go this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
