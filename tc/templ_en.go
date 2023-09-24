@@ -617,15 +617,17 @@ var mqEnText = `<html>
 <head>
     <title>tldb</title>
     <style>
-        .important{
+        .important {
             color: rgb(200, 20, 20);
             font-weight: bold;
         }
-        .body{
+
+        .body {
             background-color: rgb(254, 254, 254);
         }
     </style>
 </head>
+
 <body class="body">
     <span>
         <h3 style="display: inline;">tldb OperationPlatform</h3>
@@ -659,7 +661,7 @@ var mqEnText = `<html>
                     <th>pub topic(not contain MEM)</th>
                     <th>current ID</th>
                     <th>number of sub</th>
-                    <th>Drop</th>
+                    <th>Truncate</th>
                 </tr>
                 {{range $k,$v := .Tb }}
                 <tr>
@@ -668,9 +670,10 @@ var mqEnText = `<html>
                     <td>{{ $v.Sub }}</td>
                     <td>
                         <form action="/mq" method="post">
-                            <input name = "atype" value="1" hidden />
-                            <input name = "tableName" value="{{ $v.Name }}" hidden />
-                            <input type="button" value="Drop" onclick="javascipt:if (confirm('confirm drop?')){this.parentNode.submit();};" />
+                            <input name="atype" value="1" hidden />
+                            <input name="tableName" value="{{ $v.Name }}" hidden />
+                            <input type="button" value="Truncate"
+                                onclick="javascipt:if (confirm('confirm truncate?')){this.parentNode.submit();};" />
                         </form>
                     </td>
                 </tr>
@@ -678,9 +681,19 @@ var mqEnText = `<html>
             </table>
         </div>
         <hr>
+        <span><b>Clears the specified range of MQ data</b></span>
+        <form id="dataform" action="/mq" method="post">
+            <input name="atype" value="2" hidden />
+            <input class="btn btn-danger" type="button" value="delete"
+                onclick="javascipt:if (confirm('sure delete?')){this.parentNode.submit();};" />
+            <input name="tableName" placeholder="Topic" value="" />
+            <input name="fromId" placeholder="input ID" value="" />
+            <input name="limit" placeholder="input count" value="" />
+        </form>
+        <hr>
         <span><b>Query MQ data by Id</b></span>
         <form id="dataform" action="/mq" method="post">
-            <input name = "type" value="2" hidden />
+            <input name="type" value="2" hidden />
             Topic<input name="tableName" placeholder="topic" value="{{ .Sb.Name }}" />
             ID<input name="tableId" placeholder="ID" value="{{ .Sb.Id }}" />
             <input type="submit" value="Query" />
@@ -688,7 +701,7 @@ var mqEnText = `<html>
         <hr>
         <span><b>Query multiple MQ data by ID</b></span>
         <form id="dataform" action="/mq" method="post">
-            <input name = "type" value="3" hidden />
+            <input name="type" value="3" hidden />
             Topic<input name="tableName" placeholder="topic" value="{{ .Sb.Name }}" />
             start ID<input name="start" placeholder="start id" value="{{ .Sb.StartId }}" />
             count<input name="limit" placeholder="number of queries" value="{{ .Sb.Limit }}" />
