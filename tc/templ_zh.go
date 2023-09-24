@@ -204,46 +204,61 @@ var dataText = `<html>
 
 <head>
     <title>tldb</title>
-    <style>
-        .important {
-            color: rgb(200, 20, 20);
-            font-weight: bold;
-        }
-
-        .body {
-            background-color: rgb(254, 254, 254);
-        }
-    </style>
+    <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
-<body class="body">
-    <span>
-        <h3 style="display: inline;">tldb 操作平台</h3>
-    </span>
-    &nbsp;&gt;&gt;
-    <h4 class="important" style="display: inline;width:100%;">集群状态：</h4>
-    {{if .Stat }}
-    <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
-    {{else}}
-    <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
-    {{end}}
-    <span style="text-align:right">
-        <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
-    </span>
-    <hr>
-    <a href='/init'>用户管理</a>
-    <a href='/sysvar'>集群环境</a>
-    <a href='/sys'>节点参数</a>
-    <a href='/data' style="font-weight: bold;">数据操作</a>
-    <a href='/mq'>MQ数据</a>
-    <a href='/log'>系统日志</a>
-    <a href='/monitor'>监控</a>
-    <a href='/login'>登录</a>
-    <hr>
-    <div>
+<body class="container">
+    <div class="container-fluid text-right">
+        <span>
+            <h4 style="display: inline;">tldb 操作平台</h4>
+        </span>
+        &nbsp;&gt;&gt;
+        <h6 class="text-danger" style="display: inline;width:100%;">集群状态：</h6>
+        {{if .Stat }}
+        <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
+        {{else}}
+        <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
+        {{end}}
+        <span style="text-align:right">
+            <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
+        </span>
+    </div>
+    <nav class="navbar navbar-expand bg-light navbar-wit">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="collapsibleNavbar">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href='/init'>用户管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sysvar'>集群环境</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sys'>节点参数</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href='/data'>数据操作</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/mq'>MQ数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/log'>系统日志</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/monitor'>监控</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/login'>登录</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-1" style="font-size: small;">
         <div style="font-size: large; font-weight: bold;">数据表结构</div>
-        <div style="overflow:scroll;max-height: 300px;">
-            <table border="1" class="important">
+        <div class="row pre-scrollable small" style="overflow:scroll;max-height: 400px;">
+            <table class="table table-bordered" style="font-size:small">
                 <tr>
                     <th>表名</th>
                     <th>索引字段</th>
@@ -257,52 +272,62 @@ var dataText = `<html>
                     <td>{{ $v.Idxs }}</td>
                     <td>{{ $v.Columns }}</td>
                     <td>{{ $v.Seq }}</td>
-                    <td><button onclick="javascipt:if (confirm('表数据量大时，可能占用服务器大量内存，谨慎导出.是否确定导出表数据？')){exportdata(this);};">导出</button></td>
+                    <td><button type="button"
+                            onclick="javascipt:if (confirm('表数据量大时，可能占用服务器大量内存，谨慎导出.是否确定导出表数据？')){exportdata(this);};">导出</button>
+                    </td>
                 </tr>
                 {{end}}
             </table>
         </div>
         <hr>
-        <button onclick="openPage('/create')">新建表</button>&nbsp;<button
-            onclick="openPage('/alter')">Alter表</button>&nbsp;<button
-            onclick="openPage('/drop')">删除表</button>&nbsp;<button
-            onclick="openPage('/insert')">插入数据</button>&nbsp;<button
-            onclick="openPage('/update')">更新数据</button>&nbsp;<button onclick="openPage('/delete')">删除数据</button>
+        <button onclick="openPage('/create')" class="btn btn-primary">新建表</button>&nbsp;<button
+            onclick="openPage('/alter')" class="btn btn-primary">Alter表</button>&nbsp;<button
+            onclick="openPage('/drop')" class="btn btn-primary">删除表</button>&nbsp;<button onclick="openPage('/insert')"
+            class="btn btn-primary">插入数据</button>&nbsp;<button onclick="openPage('/update')"
+            class="btn btn-primary">更新数据</button>&nbsp;<button onclick="openPage('/delete')"
+            class="btn btn-primary">删除数据</button>
         <hr>
         <form id="exportform" action="/export" method="post">
             <input name="exportName" id="exportName" value="" hidden>
         </form>
-        <span><b>根据ID查询数据</b></span>
-        <form id="dataform" action="/data" method="post">
+
+        <form class="form-control m-1" id="dataform" action="/data" method="post">
+            <h6>根据ID查询数据</h6>
             <input name="type" value="1" hidden />
-            表名<input name="tableName" placeholder="表名" value="{{ .Sb.Name }}" />
-            表ID<input name="tableId" placeholder="表ID" value="{{ .Sb.Id }}" />
-            <input type="submit" value="查询" />
+            <div class="input-group">
+                <input name="tableName" placeholder="表名" value="{{ .Sb.Name }}" />
+                <input name="tableId" placeholder="表ID" value="{{ .Sb.Id }}" />
+                <input type="submit" class="btn btn-primary" value="查询" />
+            </div>
         </form>
-        <span><b>根据ID查询多条数据</b></span>
-        <form id="dataform" action="/data" method="post">
+        <form class="form-control m-1" id="dataform" action="/data" method="post">
+            <h6>根据ID查询多条数据</h6>
             <input name="type" value="3" hidden />
-            表名<input name="tableName" placeholder="表名" value="{{ .Sb.Name }}" />
-            表ID<input name="start" placeholder="起始ID" value="{{ .Sb.StartId }}" />
-            查询条数<input name="limit" placeholder="查询条数" value="{{ .Sb.Limit }}" />
-            <input type="submit" value="查询" />
+            <div class="input-group">
+                <input name="tableName" placeholder="表名" value="{{ .Sb.Name }}" />
+                <input name="start" placeholder="起始ID" value="{{ .Sb.StartId }}" />
+                <input name="limit" placeholder="查询条数" value="{{ .Sb.Limit }}" />
+                <input type="submit" class="btn btn-primary" value="查询" />
+            </div>
         </form>
 
-        <span><b>根据索引查询</b></span>
-        <form id="dataform" action="/data" method="post">
-            <input name="type" value="2" hidden />
-            表名<input name="tableName" placeholder="表名" value="{{ .Sb.Name }}" />
-            字段名<input name="cloName" placeholder="字段名" value="{{ .Sb.ColumnName }}" />
-            字段值<input name="cloValue" placeholder="字段值" value="{{ .Sb.ColumnValue }}" />
-            起始<input name="start" placeholder="起始" value="{{ .Sb.StartId }}" />
-            查询条数<input name="limit" placeholder="查询条数" value="{{ .Sb.Limit }}" />
-            <input type="submit" value="查询" />
+        <form class="form-control m-1" id="dataform" action="/data" method="post">
+            <h6>根据索引查询</h6>
+            <div class="input-group">
+                <input name="type" value="2" hidden />
+                <input name="tableName" placeholder="表名" value="{{ .Sb.Name }}" />
+                <input name="cloName" placeholder="字段名" value="{{ .Sb.ColumnName }}" />
+                <input name="cloValue" placeholder="字段值" value="{{ .Sb.ColumnValue }}" />
+                <input name="start" placeholder="起始" value="{{ .Sb.StartId }}" />
+                <input name="limit" placeholder="查询条数" value="{{ .Sb.Limit }}" />
+                <input type="submit" class="btn btn-primary" value="查询" />
+            </div>
         </form>
         <hr>
         <h4>查询结果：</h4>
-        <h3 class="important">{{ .Sb.Name }}</h3>
-        <table border="1">
-            <tr class="important" style="font-size: small;">
+        <h6 class="text-danger">{{ .Sb.Name }}</h6>
+        <table class="table table-striped" style="font-size:small">
+            <tr class="text-danger" style="font-size: small;">
                 <th>表Id</th>
                 {{range $k,$v := .ColName }}
                 <th>字段名</th>
@@ -314,7 +339,7 @@ var dataText = `<html>
                 <td>{{ $v.Id }}</td>
                 {{range $k1,$v1 := $v.Columns }}
                 <td>{{ $k1 }}</td>
-                <td><textarea readonly>{{ $v1 }}</textarea></td>
+                <td><textarea style="width: 100%;" readonly>{{ $v1 }}</textarea></td>
                 {{end}}
             </tr>
             {{end}}
@@ -388,110 +413,131 @@ var initText = `<html>
 
 <head>
     <title>tldb</title>
-    <style>
-        .important {
-            color: rgb(200, 20, 20);
-            font-weight: bold;
-        }
-
-        .body {
-            background-color: rgb(254, 254, 254);
-        }
-    </style>
+    <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
-<body class="body">
-    {{if not .Init}}
-    <span>
-        <h3 style="display: inline;">tldb 操作平台</h3>
-    </span>
-    &nbsp;&gt;&gt;
-    <h4 class="important" style="display: inline;width:100%;">集群状态：</h4>
-    {{if .Stat }}
-    <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
-    {{else}}
-    <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
-    {{end}}
-    {{else if .Init}}
-    <h3 style="display: inline;">tldb 操作平台 </h3>
-    {{end}}
-    <span style="text-align:right">
-        <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
-    </span>
-    <hr>
-    <a href='/init' style="font-weight: bold;">用户管理</a>
-    <a href='/sysvar'>集群环境</a>
-    <a href='/sys'>节点参数</a>
-    <a href='/data'>数据操作</a>
-    <a href='/mq'>MQ数据</a>
-    <a href='/log'>系统日志</a>
-    <a href='/monitor'>监控</a>
-    <a href='/login'>登录</a>
-    {{if .ShowCreate }}
-    <hr>
-    <div>
-        <h3>用户账户管理</h3>
-        <hr>
-        <h4>新建管理员 <h5 class="important">{{ .Show }}</h5>
-        </h4>
-        <form id="createAdminform" action="/init?type=1" method="post">
-            <input name="adminName" placeholder="用户名" />
-            <input name="adminPwd" placeholder="密码" type="password" />
-            管理员<input name="adminType" type="radio" value="1" checked />&nbsp;&nbsp;
-            {{if not .Init}}
-            数据管理员<input name="adminType" type="radio" value="2" />
-            {{end}}
-            <input type="submit" value="新建管理员" />
-        </form>
-
+<body class="container">
+    <div class="container-fluid text-right">
         {{if not .Init}}
+        <span>
+            <h4 style="display: inline;">tldb 操作平台</h4>
+        </span>
+        &nbsp;&gt;&gt;
+        <h6 class="text-danger" style="display: inline;width:100%;">集群状态：</h6>
+        {{if .Stat }}
+        <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
+        {{else}}
+        <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
+        {{end}}
+        {{else if .Init}}
+        <h3 style="display: inline;">tldb 操作平台 </h3>
+        {{end}}
+        <span style="text-align:right">
+            <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
+        </span>
+    </div>
+    <nav class="navbar navbar-expand bg-light navbar-wit">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="collapsibleNavbar">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href='/init'>用户管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sysvar'>集群环境</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sys'>节点参数</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/data'>数据操作</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/mq'>MQ数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/log'>系统日志</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/monitor'>监控</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/login'>登录</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    {{if .ShowCreate }}
+    <div class="mt-1" style="font-size: small;">
+        <div class="container-fluid card mt-1 p-1">
+
+            </h6>
+            <form class="form-control" id="createAdminform" action="/init?type=1" method="post">
+                <h6>新建管理员 <h6 class="important">{{ .Show }}</h6>
+                    <input name="adminName" placeholder="用户名" />
+                    <input name="adminPwd" placeholder="密码" type="password" />
+                    管理员<input name="adminType" type="radio" value="1" checked />
+                    {{if not .Init}}
+                    数据管理员<input name="adminType" type="radio" value="2" />
+                    {{end}}
+                    <input type="submit" class="btn btn-primary" value="新建管理员" />
+            </form>
+            {{if not .Init}}
+            <form class="form-control" id="createMQform" action="/init?type=1" method="post">
+                <h6>新建MQ客户端</h6>
+                <input name="mqName" placeholder="MQ用户名" />
+                <input name="mqPwd" placeholder="密码" type="password" />
+                <input type="submit" class="btn btn-primary" value="新建MQ客户端" />
+            </form>
+
+            <form class="form-control" id="createCliform" action="/init?type=1" method="post">
+                <h6>新建数据库客户端</h6>
+                <input name="cliName" placeholder="客户端用户名" />
+                <input name="cliPwd" placeholder="密码" type="password" />
+                <input type="submit" class="btn btn-primary" value="新建数据库客户端" />
+            </form>
+            {{end}}
+        </div>
+        {{end}}
+        {{if not .Init}}
+        <div class="container-fluid card mt-1 p-1">
+            <div class="m-2">
+                <h6>后台管理员</h6>
+                {{range $k,$v := .AdminUser}}
+                <form class="form-control" id="adminform" action="/init?type=2" method="post">
+                    <input name="adminName" value='{{ $k }}' readonly style="border:none;"/> 权限:{{ $v }}
+                    <input type="button" value="删除用户" class="btn btn-danger"
+                        onclick="javascipt:if (confirm('确定删除?')){this.parentNode.submit();};" />
+                </form>
+                {{end}}
+            </div>
+            <div class="m-2">
+                <h6>MQ客户端</h6>
+                {{range $k,$v := .MqUser }}
+                <form class="form-control" id="mqform" action="/init?type=2" method="post">
+                    <input name="mqName" value="{{ $v }}" readonly style="border:none;"/>
+                    <input type="button" value="删除用户" class="btn btn-danger"
+                        onclick="javascipt:if (confirm('确定删除?')){this.parentNode.submit();};" />
+                </form>
+                {{end}}
+            </div>
+            <div class="m-2">
+                <h6>数据库客户端</h6>
+                {{range $k,$v := .CliUser }}
+                <form class="form-control" id="cliform" action="/init?type=2" method="post">
+                    <input name="cliName" value="{{ $v }}" readonly style="border:none;" />
+                    <input type="button" value="删除用户"  class="btn btn-danger"
+                        onclick="javascipt:if (confirm('确定删除?')){this.parentNode.submit();};" />
+                </form>
+                {{end}}
+            </div>
+        </div>
         <hr>
-        <h4>新建MQ客户端</h4>
-        <form id="createMQform" action="/init?type=1" method="post">
-            <input name="mqName" placeholder="MQ用户名" />
-            <input name="mqPwd" placeholder="密码" type="password" />
-            <input type="submit" value="新建MQ客户端" />
-        </form>
-        <hr>
-        <h4>新建数据库客户端</h4>
-        <form id="createCliform" action="/init?type=1" method="post">
-            <input name="cliName" placeholder="客户端用户名" />
-            <input name="cliPwd" placeholder="密码" type="password" />
-            <input type="submit" value="新建数据库客户端" />
-        </form>
         {{end}}
     </div>
-    <hr>
-    {{end}}
-    {{if not .Init}}
-    <hr>
-    <div class="important" style="font-size: small;">
-        <h4>后台管理员</h4>
-        {{range $k,$v := .AdminUser}}
-        <form id="adminform" action="/init?type=2" method="post">
-            <input name="adminName" value='{{ $k }}' readonly /> 权限:{{ $v }}
-            <input type="button" value="删除用户" onclick="javascipt:if (confirm('确定删除?')){this.parentNode.submit();};" />
-        </form>
-        {{end}}
-        <hr>
-        <h4>MQ客户端</h4>
-        {{range $k,$v := .MqUser }}
-        <form id="mqform" action="/init?type=2" method="post">
-            <input name="mqName" value="{{ $v }}" readonly />
-            <input type="button" value="删除用户" onclick="javascipt:if (confirm('确定删除?')){this.parentNode.submit();};" />
-        </form>
-        {{end}}
-        <hr>
-        <h4>数据库客户端</h4>
-        {{range $k,$v := .CliUser }}
-        <form id="cliform" action="/init?type=2" method="post">
-            <input name="cliName" value="{{ $v }}" readonly />
-            <input type="button" value="删除用户" onclick="javascipt:if (confirm('确定删除?')){this.parentNode.submit();};" />
-        </form>
-        {{end}}
-    </div>
-    <hr>
-    {{end}}
 
 </html>`
 var insertText = `<html>
@@ -584,186 +630,96 @@ var loadText = `<html>
 
 </html>`
 var loginText = `<html>
-<head>
-    <title>tldb</title>
-    <style>
-        .important{
-            color: rgb(200, 20, 20);
-            font-weight: bold;
-        }
-        .body{
-            background-color: rgb(254, 254, 254);
-        }
-    </style>
-</head>
-<body class="body">
-    <h3 style="display: inline;">tldb 操作平台</h3>
-    <span style="text-align:right">
-        <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
-    </span>
-    <hr>
-    <div id="login">
-        <h3>登录</h3>
-        <form id="loginform" action="/login" method="post">
-            <input name="type" value="1" hidden />
-            <input name="name" placeholder="用户名" />
-            <input name="pwd" placeholder="密码" type="password" />
-            <input type="submit" value="登录" />
-        </form>
-    </div>
-    <hr>
-</html>`
-var mqText = `<html>
 
 <head>
     <title>tldb</title>
-    <style>
-        .important{
-            color: rgb(200, 20, 20);
-            font-weight: bold;
-        }
-        .body{
-            background-color: rgb(254, 254, 254);
-        }
-    </style>
+    <link href="/bootstrap.css" rel="stylesheet">
 </head>
-<body class="body">
-    <span>
-        <h3 style="display: inline;">tldb 操作平台</h3>
-    </span>
-    &nbsp;&gt;&gt;
-    <h4 class="important" style="display: inline;width:100%;">集群状态：</h4>
-    {{if .Stat }}
-    <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
-    {{else}}
-    <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
-    {{end}}
-    <span style="text-align:right">
-        <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
-    </span>
-    <hr>
-    <a href='/init'>用户管理</a>
-    <a href='/sysvar'>集群环境</a>
-    <a href='/sys'>节点参数</a>
-    <a href='/data'>数据操作</a>
-    <a href='/mq' style="font-weight: bold;">MQ数据</a>
-    <a href='/log'>系统日志</a>
-    <a href='/monitor'>监控</a>
-    <a href='/login'>登录</a>
-    <hr>
-    <div>
-        <div style="font-size: large; font-weight: bold;">数据操作</div>
+
+<body class="container">
+    <div class="container-fluid text-right">
+        <span>
+            <h4 style="display: inline;">tldb 操作平台</h4>
+        </span>
+        <span style="text-align:right">
+            <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
+        </span>
         <hr>
-        <div style="overflow:scroll;max-height: 300px;">
-            <table border="1" class="important" style="font-size: x-small;">
-                <tr>
-                    <th>发布字段(不含MEM)</th>
-                    <th>当前ID</th>
-                    <th>当前订阅数</th>
-                    <th>删除</th>
-                </tr>
-                {{range $k,$v := .Tb }}
-                <tr>
-                    <td>{{ $v.Name }}</td>
-                    <td>{{ $v.Seq }}</td>
-                    <td>{{ $v.Sub }}</td>
-                    <td>
-                        <form action="/mq" method="post">
-                            <input name = "atype" value="1" hidden />
-                            <input name = "tableName" value="{{ $v.Name }}" hidden />
-                            <input type="button" value="删除" onclick="javascipt:if (confirm('确定删除?')){this.parentNode.submit();};" />
-                        </form>
-                    </td>
-                </tr>
-                {{end}}
-            </table>
+        <div id="login">
+            <h5>登录</h5>
+            <form class="form-control" id="loginform" action="/login" method="post">
+                <input name="type" value="1" hidden />
+                <input name="name" placeholder="用户名" />
+                <input name="pwd" placeholder="密码" type="password" />
+                <input type="submit" class="btn btn-primary" value="登录" />
+            </form>
         </div>
         <hr>
-        <span><b>根据ID查询MQ数据</b></span>
-        <form id="dataform" action="/mq" method="post">
-            <input name = "type" value="2" hidden />
-            Topic<input name="tableName" placeholder="topic" value="{{ .Sb.Name }}" />
-            ID<input name="tableId" placeholder="id" value="{{ .Sb.Id }}" />
-            <input type="submit" value="查询" />
-        </form>
-        <hr>
-        <span><b>根据ID查询MQ数据</b></span>
-        <form id="dataform" action="/mq" method="post">
-            <input name = "type" value="3" hidden />
-            Topic<input name="tableName" placeholder="topic" value="{{ .Sb.Name }}" />
-            起始ID<input name="start" placeholder="起始id" value="{{ .Sb.StartId }}" />
-            查询条数<input name="limit" placeholder="查询条数" value="{{ .Sb.Limit }}" />
-            <input type="submit" value="查询" />
-        </form>
-        <hr>
-        <h4>查询结果：</h4>
-        <h3 class="important">{{ .Sb.Name }}</h3>
-        <table border="1" style="width: 100%;">
-            <tr class="important" style="font-size: small;">
-                <th style="width: 45px;">消息ID</th>
-                <th>数据</th>
-            </tr>
-            {{range $k,$v := .Tds }}
-            <tr>
-                <td>{{ $v.Id }}</td>
-                {{range $k1,$v1 := $v.Columns }}
-                <td><textarea readonly style="width: 100%;">{{ $v1 }}</textarea></td>
-                {{end}}
-            </tr>
-            {{end}}
-        </table>
     </div>
-</body>
-
 </html>`
 var sysText = `<html>
 
 <head>
     <title>tldb</title>
-    <style>
-        .important {
-            color: rgb(200, 20, 20);
-            font-weight: bold;
-        }
-
-        .body {
-            background-color: rgb(254, 254, 254);
-        }
-    </style>
+    <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
-<body class="body">
-    <span>
-        <h3 style="display: inline;">tldb 操作平台</h3>
-    </span>
-    &nbsp;&gt;&gt;
-    <h4 class="important" style="display: inline;width:100%;">集群状态：</h4>
-    {{if .Stat }}
-    <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
-    {{else}}
-    <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
-    {{end}}
-    <span style="text-align:right">
-        <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
-    </span>
-    <hr>
-    <a href='/init'>用户管理</a>
-    <a href='/sysvar'>集群环境</a>
-    <a href='/sys' style="font-weight: bold;">节点参数</a>
-    <a href='/data'>数据操作</a>
-    <a href='/mq'>MQ数据</a>
-    <a href='/log'>系统日志</a>
-    <a href='/monitor'>监控</a>
-    <a href='/login'>登录</a>
-    <hr>
-    <div>
-        <table border="1" style="font-size: 15px;">
+<body class="container">
+    <div class="container-fluid text-right">
+        <span>
+            <h4 style="display: inline;">tldb 操作平台</h4>
+        </span>
+        &nbsp;&gt;&gt;
+        <h6 class="text-danger" style="display: inline;width:100%;">集群状态：</h6>
+        {{if .Stat }}
+        <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
+        {{else}}
+        <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
+        {{end}}
+        <span style="text-align:right">
+            <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
+        </span>
+    </div>
+    <nav class="navbar navbar-expand bg-light navbar-wit">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="collapsibleNavbar">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href='/init'>用户管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sysvar'>集群环境</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href='/sys'>节点参数</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/data'>数据操作</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/mq'>MQ数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/log'>系统日志</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/monitor'>监控</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/login'>登录</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="mt-1" style="font-size: small;">
+        <table class="table table-bordered card">
             <tr>
                 <th>名称</th>
                 <th>当前值</th>
                 <th>启动设置参数</th>
                 <th>说明</th>
-            </tr>   
+            </tr>
             <tr>
                 <td>本地数据文件：</td>
                 <td class="important">{{ .SYS.DBFILEDIR }}</td>
@@ -909,32 +865,29 @@ var sysText = `<html>
                 <td>当前程序的开发版本</td>
             </tr>
         </table>
-        <hr>
-        <hr>
-
-        <span style="font-size:large;font-weight: bold;">节点导入Bin.Log 压缩包数据[以数据追加的方式]</span>
-        <span style="font-size: xx-small;">导入文件为tldb生成的压缩binlog文件</span>
-        <form id="loadForm1" action="/sys" method="post" enctype="multipart/form-data">
-            <input name="atype" value="1" hidden />
-            <input type="file" id="loadfile1" name="loadfile1" />
-            <button
-                onclick="javascipt:if (confirm('导入数据,可能导致本节点数据与其他节点数据不一致。确定导入数据?')){this.parentNode.submit();};">导入数据</button>
-        </form>
-
-        <hr>
-        <span style="font-size:large;font-weight: bold;">节点导入Bin.Log 压缩包数据[以数据覆盖的方式]</span>
-        <span style="font-size: xx-small;">导入文件为tldb生成的压缩binlog文件</span>
-        <form id="loadForm2" action="/sys" method="post" enctype="multipart/form-data">
-            <input name="atype" value="2" hidden />
-            <input type="file" id="loadfile2" name="loadfile2" />
-            <button
-                onclick="javascipt:if (confirm('导入数据,可能导致本节点数据与其他节点数据不一致。确定导入数据?')){this.parentNode.submit();};">导入数据</button>
-        </form>
-        <hr>
-        <hr>
-        <form id="sysForm" action="/sys" method="post" enctype="multipart/form-data">
+        <div class="card  mt-1">
+            <span style="font-size:large;font-weight: bold;">节点导入Bin.Log 压缩包数据[以数据追加的方式]</span>
+            <span style="font-size: xx-small;">导入文件为tldb生成的压缩binlog文件,如：binlog_1.tdb.gz </span>
+            <form class="form-control" id="loadForm1" action="/sys" method="post" enctype="multipart/form-data">
+                <input name="atype" value="1" hidden />
+                <input type="file" id="loadfile1" name="loadfile1" />
+                <button type="button" class="btn btn-light"
+                    onclick="javascipt:if (confirm('导入数据,可能导致本节点数据与其他节点数据不一致。确定导入数据?')){this.parentNode.submit();};">导入数据</button>
+            </form>
+        </div>
+        <div class="card mt-3">
+            <span style="font-size:large;font-weight: bold;">节点导入Bin.Log 压缩包数据[以数据覆盖的方式]</span>
+            <span style="font-size: xx-small;">导入文件为tldb生成的压缩binlog文件,如：binlog_1.tdb.gz</span>
+            <form class="form-control" id="loadForm2" action="/sys" method="post" enctype="multipart/form-data">
+                <input name="atype" value="2" hidden />
+                <input type="file" id="loadfile2" name="loadfile2" />
+                <button type="button" class="btn btn-light"
+                    onclick="javascipt:if (confirm('导入数据,可能导致本节点数据与其他节点数据不一致。确定导入数据?')){this.parentNode.submit();};">导入数据</button>
+            </form>
+        </div>
+        <form class="form-control mt-3" id="sysForm" action="/sys" method="post" enctype="multipart/form-data">
             <input name="atype" value="3" hidden />
-            <button
+            <button type="button" class="btn btn-dark"
                 onclick="javascipt:if (confirm('确定关闭本节点所有服务？')){document.getElementById('sysForm').submit();};">关闭本节点服务</button>
         </form>
     </div>
@@ -945,45 +898,60 @@ var sysvarText = `<html>
 
 <head>
     <title>tldb</title>
+    <link href="/bootstrap.css" rel="stylesheet">
     <meta http-equiv="refresh" content="30">
-    <style>
-        .important {
-            color: rgb(200, 20, 20);
-            font-weight: bold;
-        }
-
-        .body {
-            background-color: rgb(254, 254, 254);
-        }
-    </style>
 </head>
 
-<body class="body">
-    <span>
-        <h3 style="display: inline;">tldb 操作平台</h3>
-    </span>
-    &nbsp;&gt;&gt;
-    <h4 class="important" style="display: inline;width:100%;">集群状态：</h4>
-    {{if .Stat }}
-    <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
-    {{else}}
-    <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
-    {{end}}
-    <span style="text-align:right">
-        <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
-    </span>
-    <hr>
-    <a href='/init'>用户管理</a>
-    <a href='/sysvar' style="font-weight: bold;">集群环境</a>
-    <a href='/sys'>节点参数</a>
-    <a href='/data'>数据操作</a>
-    <a href='/mq'>MQ数据</a>
-    <a href='/log'>系统日志</a>
-    <a href='/monitor'>监控</a>
-    <a href='/login'>登录</a>
-    <hr>
-    <div>
-        <table border="1" style="font-size:15px;">
+<body class="container">
+    <div class="container-fluid text-right">
+        <span>
+            <h4 style="display: inline;">tldb 操作平台</h4>
+        </span>
+        &nbsp;&gt;&gt;
+        <h6 class="text-danger" style="display: inline;width:100%;">集群状态：</h6>
+        {{if .Stat }}
+        <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
+        {{else}}
+        <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
+        {{end}}
+        <span style="text-align:right">
+            <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
+        </span>
+    </div>
+    <nav class="navbar navbar-expand bg-light navbar-wit">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="collapsibleNavbar">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href='/init'>用户管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href='/sysvar'>集群环境</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sys'>节点参数</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/data'>数据操作</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/mq'>MQ数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/log'>系统日志</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/monitor'>监控</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/login'>登录</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="mt-1" style="font-size: small;">
+        <table class="table table-bordered card">
             <tr>
                 <td>节点启动时间(本地时间)</td>
                 <td colspan="2">{{ .SYS.StartTime }}</td>
@@ -998,14 +966,14 @@ var sysvarText = `<html>
             </tr>
             <tr>
                 <td>节点UUID</td>
-                <td class="important" colspan="2">{{ .SYS.UUID }}</td>
+                <td class="text-danger" colspan="2">{{ .SYS.UUID }}</td>
             </tr>
             <tr>
                 <td>当前状态为RUN集群节点</td>
-                <td class="important" colspan="2">{{ .SYS.RUNUUIDS }}</td>
+                <td class="text-danger" colspan="2">{{ .SYS.RUNUUIDS }}</td>
             </tr>
             <tr>
-                <td class="important">节点运行状态</td>
+                <td class="text-danger">节点运行状态</td>
                 <form id="statForm" action="/sysvar" method="post">
                     <input name="atype" value="3" hidden />
                 </form>
@@ -1022,9 +990,9 @@ var sysvarText = `<html>
                     <span style="display:inline-block; background-color:aquamarine;width: 70px;">运行 &#9989;</span>
                     {{end}}
                     <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                    <button
+                    <button type="button" class="btn btn-light"
                         onclick="javascipt:if (confirm('状态修改可能导致部分客户端当前操作失败。确定重置为代理？(谨慎)')){document.getElementById('statForm').submit();};">重置为代理</button>
-                    <button
+                    <button type="button" class="btn btn-light"
                         onclick="javascipt:if (confirm('状态修改可能导致部分客户端当前操作失败。确定重置为就绪？(谨慎)')){document.getElementById('statForm2').submit();};" />重置为就绪</button>
                     {{if eq .SYS.STAT "0"}}
                     <span style="font-size: small;">目前同步{{.SYS.SyncCount}}条数据</span>
@@ -1039,8 +1007,8 @@ var sysvarText = `<html>
                     <td colspan="2">
                         <input name="time_deviation" value="{{ .SYS.TIME_DEVIATION }}"
                             style="border: none;width: 100px;" />(纳秒)
-                        <input type="button" value="修改时间偏差(谨慎)"
-                            onclick="javascipt:if (confirm('修改节点时间可能导致日志数据出错。确定修改节点偏差？')){document.getElementById('timeForm').submit();};" />
+                        <button type="button" class="btn btn-light" type="button"
+                            onclick="javascipt:if (confirm('修改节点时间可能导致日志数据出错。确定修改节点偏差？')){document.getElementById('timeForm').submit();};">修改时间偏差(谨慎)</button>
                     </td>
                 </form>
             </tr>
@@ -1079,8 +1047,8 @@ var sysvarText = `<html>
                     <td colspan="2">
                         <input name="storeNum" value="{{ .SYS.STORENODENUM }}"
                             style="border: none;width: 50px;" />[默认0,表示全部节点]
-                        <input type="button" value="修改数据节点数"
-                            onclick="javascipt:if (confirm('修改数据节点数可能部分客户端当前操作失败(修改成功后，数据将同步到其他节点)。确定修改？')){document.getElementById('storeNumForm').submit();};" />
+                        <button type="button" class="btn btn-light"
+                            onclick="javascipt:if (confirm('修改数据节点数可能部分客户端当前操作失败(修改成功后，数据将同步到其他节点)。确定修改？')){document.getElementById('storeNumForm').submit();};">修改数据节点数</button>
                     </td>
                 </form>
             </tr>
@@ -1134,23 +1102,19 @@ var sysvarText = `<html>
             </tr>
             {{end}}
         </table>
-        <hr>
-        <h5 class="important">{{ .Show }}</h5>
-        <h3>集群操作</h3>
-        <form id="" action="/sysvar" method="post">
-            <input name="atype" value="1" hidden />
-            <table border="1">
-                <tr>
-                    <th>增加集群节点并连接</th>
-                </tr>
-                <tr>
-                    <th>目标节点地址</th>
-                    <td><input type="text" id="addr" name="addr" value="" placeholder="目标节点地址" /></td>
-                    <td><input type="submit" value="确定" /></td>
-                </tr>
-            </table>
-        </form>
-        <hr>
+        <div class="card">
+            <h5 class="text-danger">{{ .Show }}</h5>
+            <form class="row g-3" id="" action="/sysvar" method="post">
+                <h3>集群操作</h3>
+                <input name="atype" value="1" hidden />
+                <label>增加集群节点并连接</label>
+                <div class="input-group">
+                    <span class="input-group-text">目标节点服务地址</span>
+                    <input type="text" id="addr" name="addr" value="" placeholder="目标地址如  :6001" />
+                    <input class="btn btn-dark" type="submit" value="确定" />
+                </div>
+            </form>
+        </div>
     </div>
 </body>
 
@@ -1268,53 +1232,70 @@ var monitorText = `<html>
 
 <head>
     <title>tldb</title>
-    <style>
-        .important {
-            color: rgb(200, 20, 20);
-            font-weight: bold;
-        }
-
-        .body {
-            background-color: rgb(254, 254, 254);
-        }
-    </style>
+    <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
-<body class="body">
-    <span>
-        <h3 style="display: inline;">tldb 操作平台</h3>
-    </span>
-    &nbsp;&gt;&gt;
-    <h4 class="important" style="display: inline;width:100%;">集群状态：</h4>
-    {{if . }}
-    <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
-    {{else}}
-    <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
-    {{end}}
-    <span style="text-align:right">
-        <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
-    </span>
-    <hr>
-    <a href='/init'>用户管理</a>
-    <a href='/sysvar'>集群环境</a>
-    <a href='/sys'>节点参数</a>
-    <a href='/data'>数据操作</a>
-    <a href='/mq'>MQ数据</a>
-    <a href='/log'>系统日志</a>
-    <a href='/monitor' style="font-weight: bold;">监控</a>
-    <a href='/login'>登录</a>
-    <hr>
-    <div>
-        <h3>系统数据监控</h3>
-        <hr>
-        监控时间间隔(单位:秒)<input id="stime" placeholder="输入时间" value="3" />
-        <button onclick="monitorLoad();">开始</button>
-        <button onclick="stop();">停止</button>
-        <button onclick="clearData();">清除数据</button>
+<body class="container">
+    <div class="container-fluid text-right">
+        <span>
+            <h4 style="display: inline;">tldb 操作平台</h4>
+        </span>
+        &nbsp;&gt;&gt;
+        <h6 class="text-danger" style="display: inline;width:100%;">集群状态：</h6>
+        {{if . }}
+        <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
+        {{else}}
+        <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
+        {{end}}
+        <span style="text-align:right">
+            <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
+        </span>
     </div>
-    <hr>
-    <div>
-        <table border="1" style="font-size: smaller;">
+    <nav class="navbar navbar-expand bg-light navbar-wit">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="collapsibleNavbar">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href='/init'>用户管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sysvar'>集群环境</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sys'>节点参数</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href='/data'>数据操作</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/mq'>MQ数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/log'>系统日志</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href='/monitor'>监控</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/login'>登录</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-1 card" style="font-size: small;">
+        <div class="container mt-1" style="font-size: small;">
+            <h3>系统数据监控</h3>
+            <div class="input-group">
+                <span class="input-group-text">监控时间间隔(单位:秒)</span>
+                <input id="stime" placeholder="输入时间间隔" value="3" />
+                <button class="btn btn-primary" onclick="monitorLoad();">开始</button>&nbsp;
+                <button class="btn btn-primary" onclick="stop();">停止</button>&nbsp;
+                <button class="btn btn-primary" onclick="clearData();">清除数据</button>
+            </div>
+        </div>
+
+        <table class="table table-bordered " style="font-size: smaller;">
             <tr>
                 <th></th>
                 <th>内存分配(MB)</th>
@@ -1399,5 +1380,139 @@ var monitorText = `<html>
     }
 
 </script>
+
+</html>`
+
+var mqText = `<html>
+
+<head>
+    <title>tldb</title>
+    <link href="/bootstrap.css" rel="stylesheet">
+</head>
+
+<body class="container">
+    <div class="container-fluid text-right">
+        <span>
+            <h4 style="display: inline;">tldb 操作平台</h4>
+        </span>
+        &nbsp;&gt;&gt;
+        <h6 class="text-danger" style="display: inline;width:100%;">集群状态：</h6>
+        {{if .Stat }}
+        <span style="display:inline-block; background-color: aquamarine;width: 200px;">运行</span>
+        {{else}}
+        <span style="display:inline-block; background-color: rgb(255, 0, 0); width: 200px;">初始化... &#9200;</span>
+        {{end}}
+        <span style="text-align:right">
+            <h6 style="display: inline;">&nbsp;&nbsp;&nbsp;<a href="/lang?lang=en">[EN]</a></h6>
+        </span>
+    </div>
+    <nav class="navbar navbar-expand bg-light navbar-wit">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="collapsibleNavbar">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href='/init'>用户管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sysvar'>集群环境</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/sys'>节点参数</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/data'>数据操作</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href='/mq'>MQ数据</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/log'>系统日志</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/monitor'>监控</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href='/login'>登录</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-1" style="font-size: small;">
+        <div style="font-size: large; font-weight: bold;">数据操作</div>
+        <div class="row pre-scrollable small" style="overflow:scroll;max-height: 400px;">
+            <table class="table table-bordered" style="font-size:small">
+                <tr>
+                    <th>发布字段(不含MEM)</th>
+                    <th>当前ID</th>
+                    <th>当前订阅数</th>
+                    <th>删除</th>
+                </tr>
+                {{range $k,$v := .Tb }}
+                <tr>
+                    <td>{{ $v.Name }}</td>
+                    <td>{{ $v.Seq }}</td>
+                    <td>{{ $v.Sub }}</td>
+                    <td>
+                        <form action="/mq" method="post">
+                            <input name="atype" value="1" hidden />
+                            <input name="tableName" value="{{ $v.Name }}" hidden />
+                            <input type="button" value="清除"
+                                onclick="javascipt:if (confirm('确定删除?')){this.parentNode.submit();};" />
+                        </form>
+                    </td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
+        <form class="form-control m-1" id="dataform" action="/mq" method="post">
+            <h6>清除指定范围的MQ数据</h6>
+            <input name="atype" value="2" hidden />
+            <div class="input-group">
+                <input class="btn btn-danger" type="button" value="删除"
+                onclick="javascipt:if (confirm('确定删除?')){this.parentNode.parentNode.submit();};" />
+                <input name="tableName" placeholder="Topic" value="" />
+                <input name="fromId" placeholder="输入ID" value="" />
+                <input name="limit" placeholder="输入条数" value="" />
+            </div>
+        </form>
+        <form class="form-control m-1" id="dataform" action="/mq" method="post">
+            <h6>根据ID查询MQ数据</h6>
+            <input name="type" value="2" hidden />
+            <div class="input-group">
+                <input name="tableName" placeholder="Topic" value="{{ .Sb.Name }}" />
+                <input name="tableId" placeholder="id" value="{{ .Sb.Id }}" />
+                <input type="submit" class="btn btn-primary" value="查询" />
+            </div>
+        </form>
+        <form class="form-control m-1" id="dataform" action="/mq" method="post">
+            <h6>根据ID查询MQ数据</h6>
+            <input name="type" value="3" hidden />
+            <div class="input-group">
+                <input name="tableName" placeholder="Topic" value="{{ .Sb.Name }}" />
+                <input name="start" placeholder="起始id" value="{{ .Sb.StartId }}" />
+                <input name="limit" placeholder="查询条数" value="{{ .Sb.Limit }}" />
+                <input type="submit" class="btn btn-primary" value="查询" />
+            </div>
+        </form>
+        <hr>
+        <h4>查询结果：</h4>
+        <h3 class="text-danger">{{ .Sb.Name }}</h3>
+        <table class="table table-striped" style="font-size:small">
+            <tr class="important" style="font-size: small;">
+                <th style="width: 60px;">消息ID</th>
+                <th>数据</th>
+            </tr>
+            {{range $k,$v := .Tds }}
+            <tr>
+                <td>{{ $v.Id }}</td>
+                {{range $k1,$v1 := $v.Columns }}
+                <td><textarea readonly style="width: 100%;">{{ $v1 }}</textarea></td>
+                {{end}}
+            </tr>
+            {{end}}
+        </table>
+    </div>
+</body>
 
 </html>`
