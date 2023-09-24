@@ -90,29 +90,17 @@ func (this *_binLog) readGzip(name string) (bs []byte) {
 func (this *_binLog) ReadCurrentLog2GzipByte() (bs []byte, err error) {
 	this.mux4write.Lock()
 	defer this.mux4write.Unlock()
-	newgz := fmt.Sprint(this.binDir, "/", util.NewTxId())
-	err = util.Gzip(newgz, sys.BINLOGNAME, this.binDir)
-	bs, err = util.ReadFile(newgz)
-	os.Remove(newgz)
+	// newgz := fmt.Sprint(this.binDir, "/", uint(util.NewTxId()))
+	// err = util.Gzip(newgz, sys.BINLOGNAME, this.binDir)
+	// bs, err = util.ReadFile(newgz)
+	// os.Remove(newgz)
+	if _bs, err := util.ReadFile(this.binDir + "/" + sys.BINLOGNAME); err == nil {
+		if buf, err := util.UnGzip(_bs); err == nil {
+			bs = buf.Bytes()
+		}
+	}
 	return
 }
-
-// func (this *_binLog) WriteWithTime(bb *bytes.Buffer, t int64) (err error) {
-// 	buf := this.WriteWithTimeToBuffer(bb, t)
-// 	err = this.WriteBytes(buf, t)
-// 	return
-// }
-
-// func (this *_binLog) WriteWithTimeToBuffer(bb *bytes.Buffer, t int64) (write *bytes.Buffer) {
-// 	defer util.BufferPool.Put(bb)
-// 	bs := bb.Bytes()
-// 	write = util.BufferPool.Get(4 + 4 + 8 + 8 + len(bs))
-// 	write.Write(STEP)                                      //4
-// 	write.Write(util.Int32ToBytes(4 + 8 + int32(len(bs)))) //4
-// 	write.Write(util.Int64ToBytes(t))                      //8
-// 	write.Write(bs)                                        //8+Batch
-// 	return
-// }
 
 func (this *_binLog) WriteBytes(buf *Buffer, t int64) (err error) {
 	this.mux4write.RLock()
