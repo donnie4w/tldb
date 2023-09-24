@@ -96,6 +96,11 @@ var Level0Put func(key string, value []byte) (err error)
 var Level0Get func(key string) (value []byte, err error)
 var Client2Serve func(addr string) (err error)
 var BroadRmNode func() (err error)
+var ForceUnLock func(string)
+var Lock func(int64, string)
+var ReqToken func(int64, string) (err error)
+var TryLock func(string) (token string, ok bool)
+var UnLock func(string, string) (ok bool)
 var CcGet func() int64
 var CcPut func() int64
 var CountPut func() int64
