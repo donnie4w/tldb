@@ -15,7 +15,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	thrift "github.com/apache/thrift/lib/go/thrift"
+	"github.com/donnie4w/gothrift/thrift"
+
+	// thrift "github.com/apache/thrift/lib/go/thrift"
 	"github.com/donnie4w/tldb/keystore"
 	"github.com/donnie4w/tldb/log"
 	"github.com/donnie4w/tldb/sys"
