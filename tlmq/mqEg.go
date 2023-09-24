@@ -26,7 +26,7 @@ const (
 	MQ_SUBCANCEL byte = 12
 	MQ_CURRENTID byte = 13
 	MQ_ZLIB      byte = 14
-	MQ_JSON      byte = 15
+	MQ_LOCK      byte = 15
 	MQ_ACK       byte = 0
 
 	MQ_ERROR_PUBBYTE   int64 = 1201 // 发布pubByte错误
@@ -45,9 +45,9 @@ type MqEg interface {
 	DelTopic(topic string)
 	DelTopicWithID(topic string, id int64)
 	ClusPub(mqType int8, bs []byte) (err error)
-	PubByte(mb *MqBean) (err error)
-	PubJson(mb *JMqBean) (err error)
-	PubMem(mb *JMqBean)
+	PubByte(mb *MqBean, wsId int64, self bool) (err error)
+	PubJson(mb *JMqBean, wsId int64, self bool) (err error)
+	PubMem(mb *JMqBean, wsId int64, self bool)
 	PullByte(mb *MqBean, id int64) (err error)
 	PullJson(mb *JMqBean, id int64) (err error)
 	PullId(id int64) (err error)
