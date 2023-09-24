@@ -65,11 +65,12 @@ func (this *adminService) _serve(wg *sync.WaitGroup, addr string, TLS bool, serv
 	defer wg.Done()
 	sys.WEBADMINADDR = addr
 	StoreAdmin.PutOther("admin", sys.WEBADMINADDR)
-	StoreAdmin.PutOther("admintauth", fmt.Sprint(util.NewTxId()))
+	StoreAdmin.PutOther("admintauth", fmt.Sprint(uint(util.NewTxId())))
 	this.tlAdmin.Handle("/login", loginHandler)
 	this.tlAdmin.Handle("/init", initHandler)
 	this.tlAdmin.Handle("/lang", langHandler)
 	this.tlAdmin.Handle("/", initHandler)
+	this.tlAdmin.Handle("/bootstrap.css", cssHandler)
 	this.tlAdmin.HandleWithFilter("/sysvar", loginFilter(), sysVarHtml)
 	this.tlAdmin.HandleWithFilter("/data", loginFilter(), dataHtml)
 	this.tlAdmin.HandleWithFilter("/export", loginFilter(), exportHandler)
@@ -191,6 +192,11 @@ func getLang(hc *tlnet.HttpContext) LANG {
 		}
 	}
 	return ZH
+}
+
+func cssHandler(hc *tlnet.HttpContext) {
+	hc.Writer().Header().Add("Content-Type", "text/html")
+	textTplByText(css, nil, hc)
 }
 
 /***********************************************************************/
@@ -626,6 +632,13 @@ func mqHtml(hc *tlnet.HttpContext) {
 			tableName := hc.PostParamTrimSpace("tableName")
 			Level2.DropTable(&TableStub{Tablename: key.Topic(tableName)})
 			tlmq.MqWare.DelTopic(tableName)
+		} else if _type == "2" {
+			tableName, fromId, limit := hc.PostParamTrimSpace("tableName"), hc.PostParamTrimSpace("fromId"), hc.PostParamTrimSpace("limit")
+			fromId64, _ := strconv.ParseInt(fromId, 10, 64)
+			limit64, _ := strconv.ParseInt(limit, 10, 64)
+			if tableName != "" && fromId64 >= 0 && limit64 > 0 {
+				Level2.DeleteBatches(0, key.Topic(tableName), fromId64, limit64)
+			}
 		}
 	}
 
