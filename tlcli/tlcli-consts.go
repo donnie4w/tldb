@@ -8,7 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	thrift "github.com/apache/thrift/lib/go/thrift"
+	// thrift "github.com/apache/thrift/lib/go/thrift"
+	"github.com/donnie4w/gothrift/thrift"
 	"strings"
 	"regexp"
 )
