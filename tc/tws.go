@@ -12,7 +12,10 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
+	. "github.com/donnie4w/gofer/buffer"
+	. "github.com/donnie4w/tldb/container"
 	"github.com/donnie4w/tldb/key"
 	"github.com/donnie4w/tldb/keystore"
 	"github.com/donnie4w/tldb/level1"
@@ -20,11 +23,14 @@ import (
 	"github.com/donnie4w/tldb/log"
 	. "github.com/donnie4w/tldb/stub"
 	"github.com/donnie4w/tldb/sys"
-	"github.com/donnie4w/tldb/tlmq"
 	. "github.com/donnie4w/tldb/tlmq"
 	"github.com/donnie4w/tldb/util"
 	"github.com/donnie4w/tlnet"
 )
+
+func init() {
+	go wsOvertime()
+}
 
 var logger = log.Logger
 
@@ -91,6 +97,9 @@ func mqConfig() *tlnet.WebsocketConfig {
 		MqWare.DelConn(self.Id)
 		WsWare.Del(self.Id)
 	}
+	wc.OnOpen = func(hc *tlnet.HttpContext) {
+		tempOverMap.Put(hc.WS, time.Now().Unix())
+	}
 	return wc
 }
 
@@ -106,9 +115,9 @@ func mq2handler(hc *tlnet.HttpContext) {
 	bs := buf.Bytes()
 	switch bs[0] {
 	case MQ_PULLBYTE:
-		if mb, err := pullByte(bs[9:]); err == nil {
+		if mb, err := pullByte(bs[1:]); err == nil {
 			me := MQEncode(mb)
-			buf := util.BufferPool.Get(1 + len(me))
+			buf := NewBuffer()
 			buf.WriteByte(MQ_PULLBYTE)
 			buf.Write(me)
 			hc.ResponseBytes(0, buf.Bytes())
@@ -116,9 +125,9 @@ func mq2handler(hc *tlnet.HttpContext) {
 			hc.ResponseBytes(0, append([]byte{MQ_ERROR}, util.Int64ToBytes(MQ_ERROR_PULLBYTE)...))
 		}
 	case MQ_PULLJSON:
-		if mb, err := pullJson(bs[9:]); err == nil {
+		if mb, err := pullJson(bs[1:]); err == nil {
 			je := JEncode(mb)
-			buf := util.BufferPool.Get(1 + len(je))
+			buf := NewBuffer()
 			buf.WriteByte(MQ_PULLJSON)
 			buf.Write(je)
 			hc.ResponseBytes(0, buf.Bytes())
@@ -126,36 +135,86 @@ func mq2handler(hc *tlnet.HttpContext) {
 			hc.ResponseBytes(0, append([]byte{MQ_ERROR}, util.Int64ToBytes(MQ_ERROR_PULLJSON)...))
 		}
 	case MQ_CURRENTID:
-		topic := string(bs[9:])
+		topic := string(bs[1:])
 		if seq, err := Level2.SelectId(0, &TableStub{Tablename: key.Topic(topic)}); err == nil {
-			buf := util.BufferPool.Get(9)
+			buf := NewBuffer()
 			buf.WriteByte(MQ_CURRENTID)
 			buf.Write(util.Int64ToBytes(seq))
 			hc.ResponseBytes(0, buf.Bytes())
 		} else {
 			hc.ResponseBytes(0, append([]byte{MQ_ERROR}, util.Int64ToBytes(MQ_ERROR_CURRENTID)...))
 		}
+	case MQ_LOCK:
+		switch bs[1] {
+		case 1:
+			strId, extime, str := util.BytesToInt64(bs[2:10]), util.BytesToInt32(bs[10:14]), string(bs[14:])
+			if c := tokenKeeper.new(strId, hc, str, extime, false); c != nil {
+				<-c
+			}
+		case 2:
+			strId, extime, str := util.BytesToInt64(bs[2:10]), util.BytesToInt32(bs[10:14]), string(bs[14:])
+			if token, ok := sys.TryLock(str); ok {
+				tokenKeeper.new(strId, hc, str, extime, true)
+				reqToken(strId, token)
+			}
+		case 3:
+			strId := util.BytesToInt64(bs[2:10])
+			if tb, ok := tokenKeeper.get(strId); ok {
+				token := string(bs[10:26])
+				if sys.UnLock(tb.str, token) {
+					tokenKeeper.del(strId)
+				}
+			}
+			hc.ResponseBytes(0, []byte{1})
+		}
 	}
 }
+
+var tempCliMap = NewLimitMap[int64, int](1 << 10)
+var tempOverMap = NewMap[*tlnet.Websocket, int64]()
 
 func mqHandler(hc *tlnet.HttpContext) {
 	defer util.ErrRecovr()
 	bs := hc.WS.Read()
 	if bs == nil || (bs[0] != MQ_AUTH && !isAuth(hc.WS)) {
-		hc.WS.Close()
-		return
-	}
-	switch bs[0] {
-	case MQ_AUTH:
-		if mqAuth(string(bs[9:])) {
-			cliId := int64(0)
-			if len(bs) >= 17 {
-				cliId = util.BytesToInt64(bs[9:17])
+		nopass := false
+		if bs == nil {
+			nopass = true
+		} else if bs[0] == MQ_PING {
+			if v, ok := tempCliMap.Get(hc.WS.Id); ok {
+				if v > 3 {
+					nopass = true
+				} else {
+					v++
+					tempCliMap.Put(hc.WS.Id, v)
+				}
+			} else {
+				tempCliMap.Put(hc.WS.Id, 1)
 			}
-			AddConn(hc.WS, cliId)
-		} else {
-			sendErr(bs[1:9], hc.WS)
+		}
+		if nopass {
+			logger.Error("nopass>>", hc.WS.Id)
 			hc.WS.Close()
+			return
+		}
+	}
+	var err error
+	switch bs[0] & 0x7f {
+	case MQ_AUTH:
+		if !WsWare.Has(hc.WS.Id) {
+			if mqAuth(string(bs[9:])) {
+				cliId := int64(0)
+				if len(bs) >= 17 {
+					cliId = util.BytesToInt64(bs[9:16])
+				}
+				err = AddConn(hc.WS, cliId)
+				tempOverMap.Del(hc.WS)
+			} else {
+				sendErr(bs[1:9], hc.WS)
+				logger.Error("no auth>>", hc.WS.Id)
+				hc.WS.Close()
+				return
+			}
 		}
 	case MQ_RECVACK:
 		sec := int8(10)
@@ -166,41 +225,33 @@ func mqHandler(hc *tlnet.HttpContext) {
 		}
 		SetRecvAck(hc.WS.Id, sec)
 	case MQ_PUBBYTE:
-		if err, _ := pubByte(bs[9:]); err != nil {
-			sendErr(bs[1:9], hc.WS)
-		} else {
-			mqAck(bs[1:9], hc.WS)
-		}
-		return
+		err, _ = pubByte(bs[9:], hc.WS.Id, bs[0]|0x80 == 0x80)
 	case MQ_PUBJSON:
-		if err, _ := pubJson(bs[9:]); err != nil {
-			sendErr(bs[1:9], hc.WS)
-		} else {
-			mqAck(bs[1:9], hc.WS)
-		}
-		return
+		err, _ = pubJson(bs[9:], hc.WS.Id, bs[0]|0x80 == 0x80)
 	case MQ_SUB:
-		sub(string(bs[9:]), 0, hc.WS)
-	case MQ_SUBCANCEL:
-		sub(string(bs[9:]), 1, hc.WS)
-	case MQ_PULLBYTE:
-		if mb, err := pullByte(bs[9:]); err == nil {
-			MqWare.PullByte(mb, hc.WS.Id)
+		s := string(bs[9:])
+		err = sub(s, 0, hc.WS)
+		if bs[0]&0x80 == 0x80 {
+			SetJsonOn(hc.WS.Id, s, true)
 		} else {
-			sendErr(bs[1:9], hc.WS)
+			SetJsonOn(hc.WS.Id, s, false)
+		}
+	case MQ_SUBCANCEL:
+		err = sub(string(bs[9:]), 1, hc.WS)
+	case MQ_PULLBYTE:
+		var mb *MqBean
+		if mb, err = pullByte(bs[9:]); err == nil {
+			MqWare.PullByte(mb, hc.WS.Id)
 		}
 	case MQ_PULLJSON:
-		if mb, err := pullJson(bs[9:]); err == nil {
-			MqWare.PullJson(mb, hc.WS.Id)
-		} else {
-			sendErr(bs[1:9], hc.WS)
+		var mb *JMqBean
+		if mb, err = pullJson(bs[9:]); err == nil {
+			err = MqWare.PullJson(mb, hc.WS.Id)
 		}
 	case MQ_PING:
 		MqWare.Ping(bytes.NewBuffer(bs), hc.WS.Id)
 	case MQ_PUBMEM:
-		if err := pubMem(bs[9:]); err != nil {
-			sendErr(bs[1:9], hc.WS)
-		}
+		err = pubMem(bs[9:], hc.WS.Id, bs[0]|0x80 == 0x80)
 	case MQ_MERGE:
 		size := int8(60)
 		if len(bs) >= 10 {
@@ -215,32 +266,23 @@ func mqHandler(hc *tlnet.HttpContext) {
 			on = true
 		}
 		SetZlib(hc.WS.Id, on)
-	case MQ_JSON:
-		on := false
-		if bs[9] == 1 {
-			on = true
-		}
-		SetJsonOn(hc.WS.Id, on)
 	case MQ_CURRENTID:
-		topic := string(bs[9:])
-		if seq, err := Level2.SelectId(0, &TableStub{Tablename: key.Topic(topic)}); err == nil {
+		var seq int64
+		if seq, err = Level2.SelectId(0, &TableStub{Tablename: key.Topic(string(bs[9:]))}); err == nil {
 			MqWare.PullId(seq)
-		} else {
-			sendErr(bs[1:9], hc.WS)
 		}
 	case MQ_ACK:
 		if IsRecvAckOn(hc.WS.Id) {
 			ackId := util.BytesToInt64(bs[1:9])
-			tlmq.DelAckId(hc.WS.Id, ackId)
+			DelAckId(hc.WS.Id, ackId)
 		}
 	}
 	if bs[0] != MQ_PING && bs[0] != MQ_ACK {
-		// ack := bs[1:9]
-		// buf := util.BufferPool.Get(9)
-		// buf.WriteByte(MQ_ACK)
-		// buf.Write(ack)
-		// MqWare.Ack(buf, hc.WS.Id)
-		mqAck(bs[1:9], hc.WS)
+		if err == nil {
+			mqAck(bs[1:9], hc.WS)
+		} else {
+			sendErr(bs[1:9], hc.WS)
+		}
 	}
 }
 
@@ -249,7 +291,6 @@ func isAuth(ws *tlnet.Websocket) bool {
 }
 
 func mqAck(bs []byte, ws *tlnet.Websocket) {
-	// buf := util.BufferPool.Get(9)
 	var buf bytes.Buffer
 	buf.WriteByte(MQ_ACK)
 	buf.Write(bs)
@@ -257,24 +298,24 @@ func mqAck(bs []byte, ws *tlnet.Websocket) {
 }
 
 /******************************************************/
-func pubByte(bs []byte) (err error, seq int64) {
+func pubByte(bs []byte, wsId int64, self bool) (err error, seq int64) {
 	mb := &MqBean{}
 	if _, err = MQDecode(bs, mb); err == nil {
 		if seq, err = saveTopic(mb.Topic, mb.Msg); err == nil && seq > 0 {
 			mb.ID = seq
-			MqWare.PubByte(mb)
+			MqWare.PubByte(mb, wsId, self)
 			level1.BroadcastMQ(int8(MQ_PUBBYTE), MQEncode(mb))
 		}
 	}
 	return
 }
 
-func pubJson(bs []byte) (err error, seq int64) {
+func pubJson(bs []byte, wsId int64, self bool) (err error, seq int64) {
 	var mb *JMqBean
 	if mb, err = JDecode(bs); err == nil {
 		if seq, err = saveTopic(mb.Topic, []byte(mb.Msg)); err == nil && seq > 0 {
 			mb.Id = seq
-			MqWare.PubJson(mb)
+			MqWare.PubJson(mb, wsId, self)
 			level1.BroadcastMQ(int8(MQ_PUBJSON), JEncode(mb))
 		}
 	}
@@ -312,10 +353,10 @@ func pullId(bs []byte) (mb *JMqBean, err error) {
 	return
 }
 
-func pubMem(bs []byte) (err error) {
+func pubMem(bs []byte, wsId int64, self bool) (err error) {
 	var mb *JMqBean
 	if mb, err = JDecode(bs); err == nil {
-		MqWare.PubMem(mb)
+		MqWare.PubMem(mb, wsId, self)
 		level1.BroadcastMQ(int8(MQ_PUBMEM), JEncode(mb))
 	}
 	return
@@ -360,4 +401,22 @@ func mqAuth(msg string) (isAuth bool) {
 
 func sendErr(errId []byte, ws *tlnet.Websocket) {
 	ws.Send(append([]byte{MQ_ERROR}, errId...))
+}
+
+func wsOvertime() {
+	tk := time.NewTicker(10 * time.Second)
+	for {
+		select {
+		case <-tk.C:
+			tempOverMap.Range(func(k *tlnet.Websocket, v int64) bool {
+				defer recover()
+				if v+60 < time.Now().Unix() {
+					logger.Error("overtime>>", k.Id)
+					k.Close()
+					tempOverMap.Del(k)
+				}
+				return true
+			})
+		}
+	}
 }
