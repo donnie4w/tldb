@@ -50,6 +50,7 @@ var MEMLIMIT int64
 var GOGC int
 
 // /////////////////////////////////////////////
+var FREELOCKTIME int64                     //maximum retention time of an idle lock
 var STATSEQ int64                          // stat seq
 var MAXDELSEQ int64                        // max del seq
 var MAXDELSEQCURSOR int64                  // max del seq cursor
@@ -123,6 +124,7 @@ func Flag() {
 	flag.Int64Var(&COCURRENT_PUT, "put", 500, "maximum number of cocurrent put")
 	flag.Int64Var(&COCURRENT_GET, "get", 200, "maximum number of cocurrent get")
 	flag.Int64Var(&GOMAXLIMIT, "go", 1<<9, "maximum number of goroutine")
+	flag.Int64Var(&FREELOCKTIME, "freelock", 1<<16, "maximum retention time of an idle lock")
 
 	flag.BoolVar(&CLUSTER_NUM_FINAL, "clus_final", false, "if true,'clus' cannot be assigned automatically")
 	flag.IntVar(&CLUSTER_NUM, "clus", 3, "minimum number of cluster nodes")
