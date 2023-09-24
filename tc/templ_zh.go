@@ -324,21 +324,23 @@ var dataText = `<html>
             </div>
         </form>
         <hr>
+        {{if ne .Sb.Name ""}}
         <h4>查询结果：</h4>
-        <h6 class="text-danger">{{ .Sb.Name }}</h6>
-        <table class="table table-striped" style="font-size:small">
-            <tr class="text-danger" style="font-size: small;">
-                <th>表Id</th>
-                {{range $k,$v := .ColName }}
-                <th>字段名</th>
-                <th>字段值</th>
-                {{end}}
-            </tr>
+        <h6 class="text-danger">表名：{{ .Sb.Name }}</h6>
+        {{end}}
+        <table class="table table-striped" style="font-size:small;">
             {{range $k,$v := .Tds }}
-            <tr>
-                <td>{{ $v.Id }}</td>
+                {{if eq $k 0}}
+                <tr>
+                <th>ID</th>
                 {{range $k1,$v1 := $v.Columns }}
-                <td>{{ $k1 }}</td>
+                <th>{{ $k1 }}</th>
+                {{end}}
+                </tr>
+                {{end}}
+            <tr>
+                <td style="width: 80px;">{{ $v.Id }}</td>
+                {{range $k1,$v1 := $v.Columns }}
                 <td><textarea style="width: 100%;" readonly>{{ $v1 }}</textarea></td>
                 {{end}}
             </tr>
@@ -1496,18 +1498,24 @@ var mqText = `<html>
             </div>
         </form>
         <hr>
+        {{if ne .Sb.Name ""}}
         <h4>查询结果：</h4>
-        <h3 class="text-danger">{{ .Sb.Name }}</h3>
+        <h6 class="text-danger">Topic：{{ .Sb.Name }}</h6>
+        {{end}}
         <table class="table table-striped" style="font-size:small">
-            <tr class="important" style="font-size: small;">
-                <th style="width: 60px;">消息ID</th>
-                <th>数据</th>
-            </tr>
             {{range $k,$v := .Tds }}
-            <tr>
-                <td>{{ $v.Id }}</td>
+                {{if eq $k 0}}
+                <tr>
+                <th>ID</th>
                 {{range $k1,$v1 := $v.Columns }}
-                <td><textarea readonly style="width: 100%;">{{ $v1 }}</textarea></td>
+                <th>{{ $k1 }}</th>
+                {{end}}
+                </tr>
+                {{end}}
+            <tr>
+                <td style="width: 100px;">{{ $v.Id }}</td>
+                {{range $k1,$v1 := $v.Columns }}
+                <td><textarea style="width: 100%;" readonly>{{ $v1 }}</textarea></td>
                 {{end}}
             </tr>
             {{end}}
