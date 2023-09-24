@@ -54,6 +54,7 @@ func (this *syncTx) flow(t time.Duration) {
 					if ready2Run() == nil {
 						tlog.LoadCacheLog()
 					}
+					tokenroute.init()
 				} else if !isSyncOver() && sys.IsREADY() {
 					statAdmin.pullData()
 					statAdmin.amendPull()
