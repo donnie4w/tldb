@@ -18,7 +18,8 @@ func init() {
 	Flag()
 }
 
-const VERSION = "0.0.1" //program version
+const VERSION = "0.0.2" //program version
+
 const GB = 1 << 30
 const MB = 1 << 20
 
