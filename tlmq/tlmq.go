@@ -23,14 +23,27 @@ var logger = log.Logger
 
 func init() {
 	level1.ClusPub = MqWare.ClusPub
+	go healthWs()
 }
 
 var MqWare = NewMqEngine()
 
 var WsWare = NewMapL[int64, *WsSock]()
+var CliWare = NewMap[int64, *WsSock]()
 
-func AddConn(ws *tlnet.Websocket, cliId int64) {
-	WsWare.Put(ws.Id, NewWsSock(ws, cliId))
+func AddConn(ws *tlnet.Websocket, cliId int64) (err error) {
+	wss := NewWsSock(ws, cliId)
+	WsWare.Put(ws.Id, wss)
+	CliWare.Put(cliId, wss)
+	return
+}
+
+func Close(wsId int64) {
+	if wss, ok := WsWare.Get(wsId); ok {
+		CliWare.Del(wss.cliId)
+		WsWare.Del(wsId)
+		wss.ws.Close()
+	}
 }
 
 func DelAckId(wsid, ackid int64) {
@@ -57,9 +70,9 @@ func SetZlib(id int64, on bool) {
 	}
 }
 
-func SetJsonOn(id int64, on bool) {
+func SetJsonOn(id int64, topic string, on bool) {
 	if wss, ok := WsWare.Get(id); ok {
-		wss.SetJsonOn(on)
+		wss.SetJsonOn(topic, on)
 	}
 }
 
@@ -122,6 +135,9 @@ func (this *mqWare) DelTopicWithID(topic string, id int64) {
 	if ss, ok := this.wsTop.Get(id); ok {
 		ss.Del(topic)
 	}
+	if wss, ok := WsWare.Get(id); ok {
+		wss.subMap.Del(topic)
+	}
 }
 
 func (this *mqWare) DelConn(id int64) {
@@ -141,21 +157,21 @@ func (this *mqWare) ClusPub(mqType int8, bs []byte) (err error) {
 	switch byte(mqType) {
 	case MQ_PUBBYTE:
 		if mb, err := MQDecode(bs, &MqBean{}); err == nil {
-			err = this.PubByte(mb)
+			err = this.PubByte(mb, 0, false)
 		}
 	case MQ_PUBJSON:
 		if mb, err := JDecode(bs); err == nil {
-			err = this.PubJson(mb)
+			err = this.PubJson(mb, 0, false)
 		}
 	case MQ_PUBMEM:
 		if mb, err := JDecode(bs); err == nil {
-			this.PubMem(mb)
+			this.PubMem(mb, 0, false)
 		}
 	}
 	return
 }
 
-func (this *mqWare) PubByte(mb *MqBean) (err error) {
+func (this *mqWare) PubByte(mb *MqBean, wsId int64, self bool) (err error) {
 	bs := MQEncode(mb)
 	buf := util.BufferPool.Get(1 + len(bs))
 	buf.WriteByte(MQ_PUBBYTE)
@@ -163,14 +179,21 @@ func (this *mqWare) PubByte(mb *MqBean) (err error) {
 	if m, ok := this.subTopicMap.Get(mb.Topic); ok {
 		var jmbBuf *bytes.Buffer
 		m.Range(func(k int64, _ byte) bool {
+			if k == wsId && !self {
+				return true
+			}
 			if wss, ok := WsWare.Get(k); ok {
-				if wss.jsonOn {
+				json := false
+				if b, ok := wss.subMap.Get(mb.Topic); ok {
+					json = b
+				}
+				if json {
 					if jmbBuf == nil {
 						jmbBuf = bytes.NewBuffer(append([]byte{MQ_PUBJSON}, JEncode(&JMqBean{mb.ID, mb.Topic, string(mb.Msg)})...))
 					}
 				}
 				util.GoPool.Go(func() {
-					if wss.jsonOn {
+					if json {
 						wss.SendWithAck(jmbBuf)
 					} else {
 						wss.SendWithAck(buf)
@@ -196,13 +219,16 @@ func (this *mqWare) PullByte(mb *MqBean, id int64) (err error) {
 	return
 }
 
-func (this *mqWare) PubJson(mb *JMqBean) (err error) {
+func (this *mqWare) PubJson(mb *JMqBean, wsId int64, self bool) (err error) {
 	bs := JEncode(mb)
 	buf := util.BufferPool.Get(1 + len(bs))
 	buf.WriteByte(MQ_PUBJSON)
 	buf.Write(bs)
 	if m, ok := this.subTopicMap.Get(mb.Topic); ok {
 		m.Range(func(k int64, _ byte) bool {
+			if k == wsId && !self {
+				return true
+			}
 			if wss, ok := WsWare.Get(k); ok {
 				util.GoPool.Go(func() { wss.SendWithAck(buf) })
 			}
@@ -238,13 +264,16 @@ func (this *mqWare) PullId(id int64) (err error) {
 	return
 }
 
-func (this *mqWare) PubMem(mb *JMqBean) {
+func (this *mqWare) PubMem(mb *JMqBean, wsId int64, self bool) {
 	bs := JEncode(mb)
 	buf := util.BufferPool.Get(1 + len(bs))
 	buf.WriteByte(MQ_PUBMEM)
 	buf.Write(bs)
 	if m, ok := this.subTopicMap.Get(mb.Topic); ok {
 		m.Range(func(k int64, _ byte) bool {
+			if k == wsId && !self {
+				return true
+			}
 			if wss, ok := WsWare.Get(k); ok {
 				util.GoPool.Go(func() { wss.Send(buf) })
 			}
@@ -256,6 +285,7 @@ func (this *mqWare) PubMem(mb *JMqBean) {
 func (this *mqWare) Ping(buf *bytes.Buffer, id int64) {
 	if wss, ok := WsWare.Get(id); ok {
 		util.GoPool.Go(func() {
+			wss.pingTime = time.Now().Unix()
 			wss.Send(buf)
 		})
 	}
@@ -280,6 +310,8 @@ func NewWsSock(ws *tlnet.Websocket, cliId int64) (_r *WsSock) {
 	_r.ackMap = NewLinkedMap[int64, []any]()
 	_r.mergeChan = make(chan *bytes.Buffer, 1<<15)
 	_r.mergemux = &sync.Mutex{}
+	_r.pingTime = time.Now().Unix()
+	_r.subMap = NewMap[string, bool]()
 	// _r.merge = &mergeMq[*bytes.Buffer, *bytes.Buffer]{mmap: NewMapL[int64, *bytes.Buffer](), mux: &sync.Mutex{}}
 	return
 }
@@ -292,14 +324,16 @@ type WsSock struct {
 	recvSec   time.Duration
 	mergeSize int8
 	zlibOn    bool
-	jsonOn    bool
-	mux       *sync.Mutex
-	ackMap    *LinkedMap[int64, []any]
-	// merge      Merge[*bytes.Buffer, *bytes.Buffer]
+	subMap    *Map[string, bool]
+
+	mux    *sync.Mutex
+	ackMap *LinkedMap[int64, []any]
 
 	mergemux   *sync.Mutex
 	mergeChan  chan *bytes.Buffer
 	mergeCount int64
+
+	pingTime int64
 }
 
 func (this *WsSock) SetRecvAckOn(sec int8) {
@@ -314,16 +348,14 @@ func (this *WsSock) SetRecvAckOn(sec int8) {
 
 func (this *WsSock) SetMergeOn(size int8) {
 	this.mergeSize = size
-	// this.merge.MergeSize(size)
 }
 
 func (this *WsSock) SetZlib(zlib bool) {
 	this.zlibOn = zlib
-	// this.merge.SetZlib(zlib)
 }
 
-func (this *WsSock) SetJsonOn(on bool) {
-	this.jsonOn = on
+func (this *WsSock) SetJsonOn(topic string, on bool) {
+	this.subMap.Put(topic, on)
 }
 
 func (this *WsSock) AckTimer() {
@@ -357,8 +389,6 @@ func (this *WsSock) _send(buf *bytes.Buffer) (err error) {
 }
 
 func (this *WsSock) MergeSend(buf *bytes.Buffer) {
-	// this.merge.Add(buf)
-	// this.merge.CallBack(func() bool { return this.ws.Error != nil }, this._sendWithAck)
 	this.mergeChan <- buf
 	atomic.AddInt64(&this.mergeCount, 1)
 	if this.mergemux.TryLock() {
@@ -527,5 +557,20 @@ func _wssMerge(wss *WsSock) {
 	wss._sendWithAck(buf)
 	if wss.mergeCount > 0 {
 		_wssMerge(wss)
+	}
+}
+func healthWs() {
+	tk := time.NewTicker(10 * time.Second)
+	for {
+		select {
+		case <-tk.C:
+			WsWare.Range(func(k int64, ws *WsSock) bool {
+				if ws.pingTime+600 < time.Now().Unix() {
+					logger.Error("health err>>",k)
+					Close(k)
+				}
+				return true
+			})
+		}
 	}
 }
