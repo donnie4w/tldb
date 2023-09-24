@@ -11,6 +11,7 @@ import (
 
 	. "github.com/donnie4w/gofer/buffer"
 	. "github.com/donnie4w/tldb/container"
+	. "github.com/donnie4w/tldb/lock"
 	. "github.com/donnie4w/tldb/log"
 	. "github.com/donnie4w/tldb/stub"
 	. "github.com/donnie4w/tldb/util"
@@ -22,6 +23,7 @@ var trashTx = NewLimitMap[int64, int8](1 << 20)
 var rePon = NewLimitMap[int64, int8](1 << 20)
 var reMq = NewLimitMap[int64, int8](1 << 20)
 var await = NewAwait[int8](1 << 8)
+var awaitToken = NewAwait[*TokenTrans](1 << 7)
 var awaitPB = NewAwait[*PonBean](1 << 7)
 var awaitLog = NewAwait[*LogDataBean](1 << 7)
 var awaitProxy = NewAwait[*TableParam](1 << 7)
