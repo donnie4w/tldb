@@ -40,7 +40,7 @@ func NewNodeWare() (_r *_nodeWare) {
 	return
 }
 
-func (this *_nodeWare) Add(tc *tlContext) (err error) {
+func (this *_nodeWare) add(tc *tlContext) (err error) {
 	logger.Warn("add tc:", tc.RemoteUuid)
 	if this.tlMap.Has(tc) {
 		err = Errors(sys.ERR_UUID_REUSE)
@@ -59,6 +59,7 @@ func (this *_nodeWare) Add(tc *tlContext) (err error) {
 		tc.RemoteHost = ss[0]
 	}
 	this._remoteUUIDS = this.remoteRunUUID()
+	tokenroute.add(tc.RemoteUuid)
 	return
 }
 
@@ -94,6 +95,9 @@ func (this *_nodeWare) del(tc *tlContext) {
 	}
 	this._remoteUUIDS = this.remoteRunUUID()
 	this.tlMap.Del(tc)
+	if !this.hasUUID(tc.RemoteUuid) {
+		tokenroute.del(tc.RemoteUuid)
+	}
 }
 
 func (this *_nodeWare) delAndNoReconn(tc *tlContext) {
