@@ -171,8 +171,22 @@ type tokenRoute struct {
 	isInit bool
 }
 
-func (this *tokenRoute) initCmap() {
+func (this *tokenRoute) _initCmap() {
 	this.cmap.Add(nodeWare.GetALLUUID()...)
+}
+
+func (this *tokenRoute) del(uuid int64) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	this.cmap.Del(uuid)
+}
+
+func (this *tokenRoute) add(uuid int64) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	if this.isInit {
+		this.cmap.Add(uuid)
+	}
 }
 
 func (this *tokenRoute) init() {
@@ -181,7 +195,7 @@ func (this *tokenRoute) init() {
 	}
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	this.initCmap()
+	this._initCmap()
 	defer func() { this.isInit = true }()
 	for _, uuid := range nodeWare.GetRemoteUUIDS() {
 		tt := &TokenTrans{ReqType: TOKEN_REQ_INIT, Str: "", Status: 0, TokenFlag: 0, Token: ""}
