@@ -227,7 +227,7 @@ func (this *ItnetServ) SyncNode(ctx context.Context, node *Node, ir bool) (_err 
 			} else {
 				tc.RemoteUuid, tc.RemoteAddr, tc.stat, tc.RemoteAdminAddr, tc.RemoteMqAddr, tc.RemoteCliAddr = node.UUID, node.Addr, sys.STATTYPE(node.Stat), node.AdminAddr, node.MqAddr, node.CliAddr
 			}
-			err := nodeWare.Add(tc)
+			err := nodeWare.add(tc)
 			if ir {
 				tc.Conn.SyncNode(context.Background(), nodeWare.GetUUIDNode(), !ir)
 			}
