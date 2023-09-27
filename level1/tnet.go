@@ -82,7 +82,8 @@ func (this *tnetService) Connect(addr string, async bool) (err1, err2 error) {
 
 func (this *tnetService) Close() (err error) {
 	if !sys.IsStandAlone() {
-		tlclientServer.close()
+		// tlclientServer.close()
+		tfsclientserver.close()
 		nodeWare.close()
 	}
 	return
