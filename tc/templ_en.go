@@ -9,6 +9,7 @@ var alterEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -120,6 +121,7 @@ var deleteEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -171,6 +173,7 @@ var createEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -256,6 +259,7 @@ var dataEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .important {
             color: rgb(200, 20, 20);
@@ -388,6 +392,7 @@ var initEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .important {
             color: rgb(200, 20, 20);
@@ -498,6 +503,7 @@ var insertEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -587,6 +593,7 @@ var loadEnText = `<html>
 var loginEnText = `<html>
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .important{
             color: rgb(200, 20, 20);
@@ -618,6 +625,7 @@ var mqEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .important {
             color: rgb(200, 20, 20);
@@ -740,6 +748,7 @@ var sysEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .important {
             color: rgb(200, 20, 20);
@@ -970,6 +979,7 @@ var sysvarEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="refresh" content="30">
     <style>
         .important {
@@ -1184,6 +1194,7 @@ var dropEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -1227,6 +1238,7 @@ var updateEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .important {
             color: rgb(200, 20, 20);
@@ -1293,6 +1305,7 @@ var monitorEnText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .important {
             color: rgb(200, 20, 20);
