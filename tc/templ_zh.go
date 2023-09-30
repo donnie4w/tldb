@@ -9,6 +9,7 @@ var alterText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -119,6 +120,7 @@ var createText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -204,6 +206,7 @@ var dataText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
@@ -364,6 +367,7 @@ var deleteText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -415,6 +419,7 @@ var initText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
@@ -546,6 +551,7 @@ var insertText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -635,6 +641,7 @@ var loginText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
@@ -663,6 +670,7 @@ var sysText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
@@ -900,6 +908,7 @@ var sysvarText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/bootstrap.css" rel="stylesheet">
     <meta http-equiv="refresh" content="30">
 </head>
@@ -1125,6 +1134,7 @@ var dropText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="body">
@@ -1168,6 +1178,7 @@ var updateText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .important {
             color: rgb(200, 20, 20);
@@ -1234,6 +1245,7 @@ var monitorText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
@@ -1389,6 +1401,7 @@ var mqText = `<html>
 
 <head>
     <title>tldb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="/bootstrap.css" rel="stylesheet">
 </head>
 
