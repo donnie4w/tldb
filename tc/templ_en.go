@@ -808,7 +808,7 @@ var sysEnText = `<html>
             <tr>
                 <td>Whether MQ uses tls</td>
                 <td>{{ .SYS.MQTLS }}</td>
-                <td> -clitls</td>
+                <td> -mqtls</td>
                 <td>access MQ using 'wss://'</td>
             </tr>
             <tr>
@@ -820,7 +820,7 @@ var sysEnText = `<html>
             <tr>
                 <td>Whether database client uses tls</td>
                 <td>{{ .SYS.CLITLS }} </td>
-                <td> -mqtls</td>
+                <td> -clitls</td>
                 <td>database client uses ssl to access the server</td>
             </tr>
             <tr>
