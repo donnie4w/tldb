@@ -745,7 +745,7 @@ var sysText = `<html>
             <tr>
                 <td>MQ是否使用tls</td>
                 <td>{{ .SYS.MQTLS }}</td>
-                <td> -clitls</td>
+                <td> -mqtls</td>
                 <td>wss协议 访问MQ服务</td>
             </tr>
             <tr>
@@ -757,7 +757,7 @@ var sysText = `<html>
             <tr>
                 <td>客户端传输是否使用tls</td>
                 <td>{{ .SYS.CLITLS }} </td>
-                <td> -mqtls</td>
+                <td> -clitls</td>
                 <td>sslsocket数据库客户端访问服务器</td>
             </tr>
             <tr>
