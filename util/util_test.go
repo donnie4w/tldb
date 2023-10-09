@@ -166,7 +166,7 @@ func TestRand(t *testing.T) {
 }
 
 func TestDataToBytes(t *testing.T) {
-	arr := []int64{1, 2, 3, 4}
+	arr := []int64{11<<20, 22222222, 3, 4<<10}
 	bs := IntArrayToBytes(arr)
 	fmt.Println(bs)
 	arr2 := BytesToIntArray(bs)
