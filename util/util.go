@@ -261,18 +261,6 @@ func ArraySliceAsc[T int | int8 | int32 | int64 | string](a []T) (_r []T) {
 	return
 }
 
-func BytesEqual(bs1, bs2 []byte) bool {
-	if len(bs1) == len(bs2) {
-		for i := range bs1 {
-			if bs1[i] != bs2[i] {
-				return false
-			}
-		}
-		return true
-	}
-	return false
-}
-
 func NewUUID() uint32 {
 	buf := bytes.NewBuffer([]byte{})
 	buf.Write(Int64ToBytes(int64(os.Getpid())))
