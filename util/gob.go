@@ -48,7 +48,7 @@ func BytesToInt64(bs []byte) (_r int64) {
 	} else {
 		bs8 := make([]byte, 8)
 		for i, b := range bs {
-			bs8[7-i] = b
+			bs8[i+8-len(bs)] = b
 		}
 		_r = BytesToInt64(bs8)
 	}
@@ -79,7 +79,7 @@ func BytesToInt32(bs []byte) (_r int32) {
 	} else {
 		bs4 := make([]byte, 4)
 		for i, b := range bs {
-			bs4[3-i] = b
+			bs4[i+4-len(bs)] = b
 		}
 		_r = BytesToInt32(bs4)
 	}
@@ -94,7 +94,7 @@ func BytesToInt16(bs []byte) (_r int16) {
 	} else {
 		bs2 := make([]byte, 2)
 		for i, b := range bs {
-			bs2[1-i] = b
+			bs2[i+2-len(bs)] = b
 		}
 		_r = BytesToInt16(bs2)
 	}
