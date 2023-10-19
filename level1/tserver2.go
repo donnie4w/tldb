@@ -36,9 +36,7 @@ func (this *tfsClientServer) server(wg *sync.WaitGroup, _addr string, processor 
 						twork := &sockWork{transport: transport, processor: processor, handler: handler, cliError: cliErrorHandler, isServer: true, host: remoteHost2(transport)}
 						twork.work("")
 						defer twork.final()
-						ProcessMerge(transport, func(socket TsfSocket, pkt *Packet) error {
-							return twork.processRequests(pkt, processor)
-						})
+						transport.ProcessMerge(func(pkt *Packet) error { return twork.processRequests(pkt, processor) })
 					}()
 				}
 			}
@@ -194,15 +192,11 @@ func (this *tfsServerClient) server(addr string, processor Itnet, handler func(t
 		if async {
 			go func() {
 				defer twork.final()
-				ProcessMerge(this.transport, func(socket TsfSocket, pkt *Packet) error {
-					return twork.processRequests(pkt, processor)
-				})
+				this.transport.ProcessMerge(func(pkt *Packet) error { return twork.processRequests(pkt, processor) })
 			}()
 		} else {
 			defer twork.final()
-			ProcessMerge(this.transport, func(socket TsfSocket, pkt *Packet) error {
-				return twork.processRequests(pkt, processor)
-			})
+			this.transport.ProcessMerge(func(pkt *Packet) error { return twork.processRequests(pkt, processor) })
 		}
 	} else {
 		logger.Error("serverClient to [", addr, "] Error:", err)
