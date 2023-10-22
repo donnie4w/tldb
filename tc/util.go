@@ -120,32 +120,31 @@ func valueToBytes(_type []byte, value string) (_r []byte, err error) {
 	case "0":
 		_r = []byte(value)
 	case "1": //int64
-		var v int
-		if v, err = strconv.Atoi(value); err == nil {
-			i := int64(v)
+		var v int64
+		if v, err = strconv.ParseInt(value, 10, 64); err == nil {
 			var buf bytes.Buffer
-			binary.Write(&buf, binary.BigEndian, &i)
+			binary.Write(&buf, binary.BigEndian, &v)
 			_r = buf.Bytes()
 		}
 	case "2": //int32
-		var v int
-		if v, err = strconv.Atoi(value); err == nil {
+		var v int64
+		if v, err = strconv.ParseInt(value, 10, 64); err == nil {
 			i := int32(v)
 			var buf bytes.Buffer
 			binary.Write(&buf, binary.BigEndian, &i)
 			_r = buf.Bytes()
 		}
 	case "3": //int16
-		var v int
-		if v, err = strconv.Atoi(value); err == nil {
+		var v int64
+		if v, err = strconv.ParseInt(value, 10, 64); err == nil {
 			i := int16(v)
 			var buf bytes.Buffer
 			binary.Write(&buf, binary.BigEndian, &i)
 			_r = buf.Bytes()
 		}
 	case "4": //int8
-		var v int
-		if v, err = strconv.Atoi(value); err == nil {
+		var v int64
+		if v, err = strconv.ParseInt(value, 10, 64); err == nil {
 			i := int8(v)
 			var buf bytes.Buffer
 			binary.Write(&buf, binary.BigEndian, &i)
@@ -173,32 +172,31 @@ func valueToBytes(_type []byte, value string) (_r []byte, err error) {
 			_r = []byte{value[0]}
 		}
 	case "9": //uint64
-		var v int
-		if v, err = strconv.Atoi(value); err == nil {
-			i := uint64(v)
+		var v uint64
+		if v, err = strconv.ParseUint(value, 10, 64); err == nil {
 			var buf bytes.Buffer
-			binary.Write(&buf, binary.BigEndian, &i)
+			binary.Write(&buf, binary.BigEndian, &v)
 			_r = buf.Bytes()
 		}
 	case "10": //uint32
-		var v int
-		if v, err = strconv.Atoi(value); err == nil {
+		var v uint64
+		if v, err = strconv.ParseUint(value, 10, 64); err == nil {
 			i := uint32(v)
 			var buf bytes.Buffer
 			binary.Write(&buf, binary.BigEndian, &i)
 			_r = buf.Bytes()
 		}
 	case "11": //uint16
-		var v int
-		if v, err = strconv.Atoi(value); err == nil {
+		var v uint64
+		if v, err = strconv.ParseUint(value, 10, 64); err == nil {
 			i := uint16(v)
 			var buf bytes.Buffer
 			binary.Write(&buf, binary.BigEndian, &i)
 			_r = buf.Bytes()
 		}
 	case "12": //uint8
-		var v int
-		if v, err = strconv.Atoi(value); err == nil {
+		var v uint64
+		if v, err = strconv.ParseUint(value, 10, 64); err == nil {
 			i := uint8(v)
 			var buf bytes.Buffer
 			binary.Write(&buf, binary.BigEndian, &i)
