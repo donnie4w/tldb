@@ -144,9 +144,9 @@ func Flag() {
 	flag.StringVar(&ADMINCRT, "admincrt", "", "path of admin tls crt file")
 	flag.StringVar(&ADMINKEY, "adminkey", "", "path of admin tls key file")
 
-	flag.StringVar(&CLIADDR, "cli", ":7001", "client address")
-	flag.StringVar(&MQADDR, "mq", ":5001", "mq address")
-	flag.StringVar(&ADDR, "cs", ":6001", "cluster service address")
+	flag.StringVar(&CLIADDR, "cli", "", "client address")
+	flag.StringVar(&MQADDR, "mq", "", "mq address")
+	flag.StringVar(&ADDR, "cs", "", "cluster service address")
 	flag.StringVar(&WEBADMINADDR, "admin", ":4001", "web admin platform address")
 
 	flag.BoolVar(&CMD, "cmd", false, "command line interaction mode")
