@@ -88,7 +88,7 @@ func MatchString(pattern string, s string) bool {
 	return b
 }
 
-func ErrRecovr() {
+func Recovr() {
 	if err := recover(); err != nil {
 	}
 }
