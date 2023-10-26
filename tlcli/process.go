@@ -103,7 +103,7 @@ func (this *cliService) _server(wg *sync.WaitGroup, _addr string, processor thri
 }
 
 func (this *cliService) Close() (err error) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	if strings.TrimSpace(sys.CLIADDR) != "" {
 		this.isClose = true
 		err = this.server.Close()
