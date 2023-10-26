@@ -531,6 +531,24 @@ func (this *ItnetServ) ProxyCall(ctx context.Context, syncId int64, paramData []
 						if err != nil {
 							tp.Err = err.Error()
 						}
+					case 19:
+						err := DeleteBatch(1, tp.TableName, tp.Ids)
+						tp = &TableParam{}
+						if err != nil {
+							tp.Err = err.Error()
+						}
+					case 20:
+						_r, err := SelectByIdxDescLimit(1, tp.TableName, tp.IdxName, tp.IdxValue, tp.Start, tp.Limit)
+						tp = &TableParam{StubArray: _r}
+						if err != nil {
+							tp.Err = err.Error()
+						}
+					case 21:
+						_r, err := SelectByIdxAscLimit(1, tp.TableName, tp.IdxName, tp.IdxValue, tp.Start, tp.Limit)
+						tp = &TableParam{StubArray: _r}
+						if err != nil {
+							tp.Err = err.Error()
+						}
 					}
 					bs := util.TEncode(tp)
 					ackProxy(tc, tc.RemoteUuid, syncId, util.SnappyEncode(bs), pType)
