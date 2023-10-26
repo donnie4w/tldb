@@ -32,7 +32,7 @@ type keeper struct {
 }
 
 func (this *keeper) new(strId int64, hc *tlnet.HttpContext, str string, extime int32, istry bool) (ch chan int8) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	strLock.Lock(str)
 	defer strLock.Unlock(str)
 	if extime <= 0 {
@@ -126,7 +126,7 @@ func exTime() {
 		select {
 		case <-tk.C:
 			func() {
-				defer util.ErrRecovr()
+				defer util.Recovr()
 				tokenKeeper.tokenMap.Range(func(k int64, v *tokenBean) bool {
 					if v.reqtime > 0 && v.reqtime+int64(v.extime) < time.Now().Unix() {
 						logger.Error("forceunlock>>>>>>", *v)
