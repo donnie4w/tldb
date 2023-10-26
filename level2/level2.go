@@ -43,6 +43,10 @@ func init() {
 	level1.LoadTableInfo = Level2.LoadTableInfo
 	level1.LoadMQTableInfo = Level2.LoadMQTableInfo
 	level1.DeleteBatches = Level2.DeleteBatches
+	level1.DeleteBatch = Level2.DeleteBatch
+	level1.SelectByIdxAscLimit = Level2.SelectByIdxAscLimit
+	level1.SelectByIdxDescLimit = Level2.SelectByIdxDescLimit
+
 	sys.Export = Level2.export
 	sys.CcGet = Level2.ccGet
 	sys.CcPut = Level2.ccPut
@@ -117,7 +121,7 @@ func (this *level2) Insert(call int, db *TableStub) (seq int64, err error) {
 		bacMap := make(map[string][]byte, 0)
 		_id_key := KeyLevel2.SeqKey(tablename, seq)
 		if err = saveIdxs(db, seq, bacMap); err == nil {
-			bacMap[_id_key] = EncodeTableStub(db) //TEncode(db)
+			bacMap[_id_key] = EncodeTableStub(db)
 			err = level1.Level1.Batch(1, bacMap, nil)
 		}
 	} else if err == nil && seq == 0 {
@@ -677,30 +681,6 @@ func (this *level2) Delete(call int, ts *TableStub) (err error) {
 	}
 	idxDelMap := make(map[string][]byte, 0)
 	if ts.ID > 0 {
-		// _id_key := KeyLevel2.SeqKey(ts.Tablename, ts.ID)
-		// this.strLock.Lock(_id_key)
-		// defer this.strLock.Unlock(_id_key)
-		// if level1.Level1.Has(_id_key) {
-		// 	dels := make([]string, 0)
-		// 	dels = append(dels, _id_key)
-		// 	_pte_key := KeyLevel2.PteToIdxStub(ts.Tablename, ts.ID)
-		// 	if bs, err := level1.Level1.GetLocal(_pte_key); err == nil && bs != nil {
-		// 		is := decode2IdxStub(bs)
-		// 		for _, _idx_key := range is.IdxMap {
-		// 			dels = append(dels, _idx_key)
-		// 			idxDelMap[KeyLevel3.SeqForDel(fmt.Sprint(atomic.AddInt64(&sys.MAXDELSEQ, 1)))] = []byte(_idx_key)
-		// 			idxDelMap[KeyLevel3.KeyMaxDelSeq()] = Int64ToBytes(*&sys.MAXDELSEQ)
-		// 		}
-		// 		dels = append(dels, _pte_key)
-		// 	}
-		// 	if err == nil {
-		// 		if err = level1.Level1.Batch(3, nil, dels); err == nil {
-		// 			go level0.Level0.Batch(idxDelMap, nil)
-		// 		}
-		// 	}
-		// } else {
-		// 	err = Errors(sys.ERR_DATA_NOEXIST)
-		// }
 		var dels []string
 		if dels, err = this._delete(ts.Tablename, ts.ID, idxDelMap); err == nil && len(dels) > 0 {
 			if err = level1.Level1.Batch(3, nil, dels); err == nil {
@@ -972,6 +952,193 @@ func (this *level2) DeleteBatches(call int, tablename string, fromId, toId int64
 		}
 	} else {
 		err = Errors(sys.ERR_NO_MATCH_PARAM)
+	}
+	return
+}
+
+// Parameters:
+//   - Name
+//   - Ids
+func (this *level2) DeleteBatch(call int, tablename string, ids []int64) (err error) {
+	defer myRecovr()
+	defer this.pLock.Unlock()
+	if err = this.pLock.Lock(); err != nil {
+		return
+	}
+	if level1.IsClusRun() && !sys.IsRUN() {
+		if tp, exec := level1.BroadcastProxy(&TableParam{TableName: tablename, Ids: ids}, 0, 19, 1); tp != nil && exec.Error() == nil {
+			if tp.Err != "" {
+				err = errors.New(tp.Err)
+			}
+		} else {
+			err = Errors(sys.ERR_PROXY)
+		}
+		return
+	}
+
+	idxDelMap := make(map[string][]byte, 0)
+	delss := make([]string, 0)
+	if ids != nil && len(ids) > 0 {
+		for _, id := range ids {
+			if dels, err := this._delete(tablename, id, idxDelMap); err == nil {
+				delss = append(delss, dels...)
+			}
+		}
+		if err == nil && len(delss) > 0 {
+			if err = level1.Level1.Batch(3, nil, delss); err == nil {
+				go level0.Level0.Batch(idxDelMap, nil)
+			}
+		}
+	} else {
+		err = Errors(sys.ERR_NO_MATCH_PARAM)
+	}
+	return
+}
+
+// Parameters:
+//   - Name
+//   - Column
+//   - Value
+//   - StartId
+//   - Limit
+func (this *level2) SelectByIdxDescLimit(call int, table_name string, idx_name string, _idx_value []byte, startId int64, limit int64) (_r []*TableStub, err error) {
+	defer myRecovr()
+	if table_name == "" || idx_name == "" || _idx_value == nil {
+		err = Errors(sys.ERR_NO_MATCH_PARAM)
+		return
+	}
+	defer this.gLock.Unlock()
+	if err = this.gLock.Lock(); err != nil {
+		return
+	}
+	isProxy, proxyuuid, hasRemoteRun := false, int64(0), len(level1.GetRemoteRunUUID()) > 0
+	if hasRemoteRun && !sys.IsRUN() {
+		isProxy = true
+	} else if proxyuuid = level1.LB(); proxyuuid > 0 && call == 0 {
+		isProxy = true
+	}
+	if isProxy {
+		if tp, exec := level1.BroadcastProxy(&TableParam{TableName: table_name, IdxName: idx_name, IdxValue: _idx_value, Start: startId, Limit: limit}, proxyuuid, 20, 1); tp != nil && exec.Error() == nil {
+			if tp.Err != "" {
+				err = errors.New(tp.Err)
+			} else {
+				_r = tp.StubArray
+			}
+		} else {
+			err = Errors(sys.ERR_PROXY)
+		}
+	} else if sys.IsRUN() {
+		_r = make([]*TableStub, 0)
+		count := limit
+		idxvalue := idxValue(_idx_value)
+		seq := this.findIdxById(table_name, idx_name, idxvalue, startId, false)
+		for k := seq; k > 0; k-- {
+			if count <= 0 {
+				return
+			}
+			_idx_key := KeyLevel2.IndexKey(table_name, idx_name, idxvalue, k)
+			if level1.Level1.Has(_idx_key) {
+				if idbuf, _ := level1.Level1.GetLocal(_idx_key); idbuf != nil {
+					tid := BytesToInt64(idbuf)
+					if t, er := this._selectById(table_name, tid); er == nil {
+						_r = append(_r, t)
+						count--
+					}
+				}
+			}
+		}
+	} else {
+		err = Errors(sys.ERR_NO_RUNSTAT)
+	}
+	return
+}
+
+func (this *level2) findIdxById(table_name, idx_name, idxvalue string, id int64, asc bool) (_r int64) {
+	defer myRecovr()
+	if id <= 0 {
+		return
+	}
+	_pte_key := KeyLevel2.PteToIdxStub(table_name, id)
+	if bs, err := level1.Level1.GetLocal(_pte_key); err == nil {
+		is := decode2IdxStub(bs)
+		if _idx_key, ok := is.IdxMap[idx_name]; ok {
+			idxname := KeyLevel2.IndexName(table_name, idx_name, idxvalue)
+			_r = KeyLevel2.GetIdxSeqByKeySubName(_idx_key, idxname)
+		}
+	}
+	if _r == 0 {
+		if bs, err := level1.Level1.GetLocal(KeyLevel2.MaxSeqForId(table_name)); err == nil {
+			if id < BytesToInt64(bs) {
+				if asc {
+					return this.findIdxById(table_name, idx_name, idxvalue, id+1, true)
+				} else {
+					return this.findIdxById(table_name, idx_name, idxvalue, id-1, false)
+				}
+			}
+		}
+	}
+	return
+}
+
+// Parameters:
+//   - Name
+//   - Column
+//   - Value
+//   - StartId
+//   - Limit
+func (this *level2) SelectByIdxAscLimit(call int, table_name string, idx_name string, _idx_value []byte, startId int64, limit int64) (_r []*TableStub, err error) {
+	defer myRecovr()
+	if table_name == "" || idx_name == "" || _idx_value == nil {
+		err = Errors(sys.ERR_NO_MATCH_PARAM)
+		return
+	}
+	defer this.gLock.Unlock()
+	if err = this.gLock.Lock(); err != nil {
+		return
+	}
+	isProxy, proxyuuid, hasRemoteRun := false, int64(0), len(level1.GetRemoteRunUUID()) > 0
+	if hasRemoteRun && !sys.IsRUN() {
+		isProxy = true
+	} else if proxyuuid = level1.LB(); proxyuuid > 0 && call == 0 {
+		isProxy = true
+	}
+	if isProxy {
+		if tp, exec := level1.BroadcastProxy(&TableParam{TableName: table_name, IdxName: idx_name, IdxValue: _idx_value, Start: startId, Limit: limit}, proxyuuid, 21, 1); tp != nil && exec.Error() == nil {
+			if tp.Err != "" {
+				err = errors.New(tp.Err)
+			} else {
+				_r = tp.StubArray
+			}
+		} else {
+			err = Errors(sys.ERR_PROXY)
+		}
+	} else if sys.IsRUN() {
+		_r = make([]*TableStub, 0)
+		count, mxSeq := limit, int64(0)
+		idxvalue := idxValue(_idx_value)
+		seqName := KeyLevel2.MaxSeqForIdx(table_name, idx_name, idxvalue)
+		if ids, er := level1.Level1.GetLocal(seqName); er == nil {
+			mxSeq = BytesToInt64(ids)
+		}
+		seq := this.findIdxById(table_name, idx_name, idxvalue, startId, true)
+		for k := seq; k <= mxSeq; k++ {
+			if count <= 0 {
+				return
+			}
+			_idx_key := KeyLevel2.IndexKey(table_name, idx_name, idxvalue, k)
+			if level1.Level1.Has(_idx_key) {
+				if idbuf, _ := level1.Level1.GetLocal(_idx_key); idbuf != nil {
+					tid := BytesToInt64(idbuf)
+					if t, er := this._selectById(table_name, tid); er == nil {
+						_r = append(_r, t)
+						count--
+					}
+				}
+			}
+		}
+
+	} else {
+		err = Errors(sys.ERR_NO_RUNSTAT)
 	}
 	return
 }
