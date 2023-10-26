@@ -387,6 +387,81 @@ func (this *processor) ShowAllTables(ctx context.Context) (_r []*TableBean, _err
 	return
 }
 
+// Parameters:
+//   - Name
+//   - Ids
+func (this *processor) DeleteBatch(ctx context.Context, name string, ids []int64) (_r *AckBean, _err error) {
+	defer myRecovr()
+	cc := ctx2CliContext(ctx)
+	defer cc.mux.Unlock()
+	cc.mux.Lock()
+	_r = newAckBean()
+	if noAuthAndClose(cc) {
+		_err = util.Errors(sys.ERR_AUTH_NOPASS)
+		return
+	}
+	if name != "" && ids != nil && len(ids) > 0 {
+		if err := Level2.DeleteBatch(0, name, ids); err != nil {
+			_r.Ack = newErrAck(0, err.Error())
+		}
+	} else {
+		_r.Ack = newErrAck(ERR_NO_MATCH_PARAM, "")
+	}
+	return
+}
+
+// Parameters:
+//   - Name
+//   - Column
+//   - Value
+//   - StartId
+//   - Limit
+func (this *processor) SelectByIdxDescLimit(ctx context.Context, name string, column string, value []byte, startId int64, limit int64) (_r []*DataBean, _err error) {
+	defer myRecovr()
+	cc := ctx2CliContext(ctx)
+	defer cc.mux.Unlock()
+	cc.mux.Lock()
+	_r = make([]*DataBean, 0)
+	if noAuthAndClose(cc) {
+		_err = util.Errors(sys.ERR_AUTH_NOPASS)
+		return
+	}
+	if dbs, err := Level2.SelectByIdxDescLimit(0, name, column, value, startId, limit); err == nil && dbs != nil {
+		for _, db := range dbs {
+			_d := &DataBean{ID: db.ID}
+			_d.TBean = db.Field
+			_r = append(_r, _d)
+		}
+	}
+	return
+}
+
+// Parameters:
+//   - Name
+//   - Column
+//   - Value
+//   - StartId
+//   - Limit
+func (this *processor) SelectByIdxAscLimit(ctx context.Context, name string, column string, value []byte, startId int64, limit int64) (_r []*DataBean, _err error) {
+	defer myRecovr()
+	cc := ctx2CliContext(ctx)
+	defer cc.mux.Unlock()
+	cc.mux.Lock()
+	_r = make([]*DataBean, 0)
+	if noAuthAndClose(cc) {
+		_err = util.Errors(sys.ERR_AUTH_NOPASS)
+		return
+	}
+	if dbs, err := Level2.SelectByIdxAscLimit(0, name, column, value, startId, limit); err == nil && dbs != nil {
+		for _, db := range dbs {
+			_d := &DataBean{ID: db.ID}
+			_d.TBean = db.Field
+			_r = append(_r, _d)
+		}
+	}
+	return
+}
+
 /******************************************************************/
 func Auth(s string) (_ok bool) {
 	defer myRecovr()
