@@ -6,6 +6,8 @@ package key
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -36,6 +38,16 @@ func (this *keyLevel2) IndexName(tablename, idx_name, idx_value string) string {
 
 func (this *keyLevel2) IndexKey(tablename, idx_name, idx_value string, _seq int64) string {
 	return concat(this.IndexName(tablename, idx_name, idx_value), fmt.Sprint(_seq))
+}
+
+func (this *keyLevel2) GetIdxSeqByKeySubName(idx_key, idx_name string) (seq int64) {
+	if len(idx_key) >= len(idx_name) {
+		if strings.Contains(idx_key, idx_name) {
+			s := idx_key[len(idx_name):]
+			seq, _ = strconv.ParseInt(s, 10, 64)
+		}
+	}
+	return
 }
 
 func (this *keyLevel2) MaxSeqForId(tablename string) string {
