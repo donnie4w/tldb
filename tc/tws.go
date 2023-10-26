@@ -51,7 +51,7 @@ func (this *mqService) Serve(wg *sync.WaitGroup) (err error) {
 }
 
 func (this *mqService) Close() (err error) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	if strings.TrimSpace(sys.MQADDR) != "" {
 		this.isClose = true
 		err = this.tlnetMq.Close()
@@ -104,7 +104,7 @@ func mqConfig() *tlnet.WebsocketConfig {
 }
 
 func mq2handler(hc *tlnet.HttpContext) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	auth, _ := hc.GetCookie("auth")
 	if hc.ReqInfo.Header.Get("Origin") != sys.WSORIGIN || !mqAuth(auth) {
 		hc.ResponseBytes(0, append([]byte{MQ_ERROR}, util.Int64ToBytes(MQ_ERROR_NOPASS)...))
@@ -174,7 +174,7 @@ var tempCliMap = NewLimitMap[int64, int](1 << 10)
 var tempOverMap = NewMap[*tlnet.Websocket, int64]()
 
 func mqHandler(hc *tlnet.HttpContext) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	bs := hc.WS.Read()
 	if bs == nil || (bs[0] != MQ_AUTH && !isAuth(hc.WS)) {
 		nopass := false
