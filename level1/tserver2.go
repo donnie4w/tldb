@@ -229,14 +229,14 @@ func (this *ItnetImpl) Ping(ctx context.Context, pingstr int64) (_err error) {
 	buf := method(_Ping)
 	buf.Write(util.Int64ToBytes(pingstr))
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
 func (this *ItnetImpl) Pong(ctx context.Context, pongBs []byte) (_err error) {
 	buf := method(_Pong)
 	buf.Write(pongBs)
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -245,7 +245,7 @@ func (this *ItnetImpl) Pong(ctx context.Context, pongBs []byte) (_err error) {
 func (this *ItnetImpl) Auth(ctx context.Context, authKey []byte) (_err error) {
 	buf := method(_Auth)
 	buf.Write(authKey)
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -255,7 +255,7 @@ func (this *ItnetImpl) Auth2(ctx context.Context, authKey []byte) (_err error) {
 	buf := method(_Auth2)
 	buf.Write(authKey)
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -270,7 +270,7 @@ func (this *ItnetImpl) Pon(ctx context.Context, ponBeanBytes []byte, id int64) (
 	buf.Write(util.Int64ToBytes(id))
 	buf.Write(ponBeanBytes)
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -283,7 +283,7 @@ func (this *ItnetImpl) Pon2(ctx context.Context, pb *PonBean, id int64) (_err er
 	pbbytes, _ := util.Encode(pb)
 	buf.Write(pbbytes)
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -295,7 +295,7 @@ func (this *ItnetImpl) Pon3(ctx context.Context, ponBeanBytes []byte, id int64, 
 	buf.Write(util.Int64ToBytes(id))
 	buf.WriteByte(boolToByte(ack))
 	buf.Write(ponBeanBytes)
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -311,7 +311,7 @@ func (this *ItnetImpl) Time(ctx context.Context, pretimenano int64, timenano int
 	buf.Write(util.Int64ToBytes(timenano))
 	buf.Write(util.Int16ToBytes(num))
 	buf.WriteByte(boolToByte(ir))
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -325,7 +325,7 @@ func (this *ItnetImpl) SyncNode(ctx context.Context, node *Node, ir bool) (_err 
 	nodebs, _ := util.Encode(node)
 	buf.Write(nodebs)
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -335,7 +335,7 @@ func (this *ItnetImpl) SyncTx(ctx context.Context, syncId int64, result int8) (_
 	buf.Write(util.Int64ToBytes(syncId))
 	buf.WriteByte(byte(result))
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -345,7 +345,7 @@ func (this *ItnetImpl) SyncTxMerge(ctx context.Context, syncList map[int64]int8)
 	syncListBuf := mapTobytes(syncList)
 	buf.Write(syncListBuf.Bytes())
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -388,7 +388,7 @@ func (this *ItnetImpl) PubMq(ctx context.Context, syncId int64, mqType int8, bs 
 	buf.WriteByte(byte(mqType))
 	buf.Write(bs)
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -399,7 +399,7 @@ func (this *ItnetImpl) PullData(ctx context.Context, syncId int64, ldb *LogDataB
 	ldbBys, _ := util.Encode(ldb)
 	buf.Write(ldbBys)
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -409,7 +409,7 @@ func (this *ItnetImpl) ReInit(ctx context.Context, syncId int64, sbean *SysBean)
 	sbeanBys, _ := util.Encode(sbean)
 	buf.Write(sbeanBys)
 
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -421,7 +421,7 @@ func (this *ItnetImpl) ProxyCall(ctx context.Context, syncId int64, paramData []
 	buf.WriteByte(byte(ctype))
 
 	buf.Write(paramData)
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
@@ -434,6 +434,6 @@ func (this *ItnetImpl) BroadToken(ctx context.Context, syncId int64, tt *TokenTr
 		buf.WriteByte(0)
 	}
 	buf.Write(util.TEncode(tt))
-	go this.socket.WriteWithMerge(buf.Bytes())
+	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
