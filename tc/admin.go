@@ -53,7 +53,7 @@ func (this *adminService) Serve(wg *sync.WaitGroup) (err error) {
 }
 
 func (this *adminService) Close() (err error) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	if strings.TrimSpace(sys.WEBADMINADDR) != "" {
 		this.isClose = true
 		err = this.tlAdmin.Close()
@@ -1043,7 +1043,7 @@ func mntConfig() (wc *tlnet.WebsocketConfig) {
 }
 
 func mntHandler(hc *tlnet.HttpContext) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	s := string(hc.WS.Read())
 	if t, err := strconv.Atoi(s); err == nil {
 		if t < 1 {
