@@ -364,7 +364,7 @@ func (this *WsSock) AckTimer() {
 		select {
 		case <-ticker.C:
 			func() {
-				defer util.ErrRecovr()
+				defer util.Recovr()
 				this.ackMap.BackForEach(func(_ int64, bs []interface{}) bool {
 					t := bs[0].(int64)
 					if t+int64(this.recvSec) < time.Now().UnixNano() {
@@ -384,7 +384,7 @@ func (this *WsSock) DelAckId(id int64) {
 }
 
 func (this *WsSock) _send(buf *bytes.Buffer) (err error) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	return this.ws.Send(buf.Bytes())
 }
 
@@ -490,7 +490,7 @@ func (this *mergeMq[T, V]) CallBack(cancelfunc func() bool, f func(bs V) error) 
 }
 
 func (this *mergeMq[T, V]) getMergeBean() (_r *bytes.Buffer, err error) {
-	defer util.ErrRecovr()
+	defer util.Recovr()
 	size := int(this.mergeSize) * 1 << 20
 	mb := &MergeBean{BeanList: make([][]byte, 0)}
 	start, end := this.cursor+1, this.cursor+1
