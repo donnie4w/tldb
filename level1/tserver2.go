@@ -31,7 +31,7 @@ func (this *tfsClientServer) server(wg *sync.WaitGroup, _addr string, processor 
 			sys.ADDR = _addr
 			for {
 				if transport, err := this.serverTransport.Accept(); err == nil {
-					transport.SetSnappyMergeData(true)
+					transport.SetTConfiguration(&TConfiguration{SnappyMergeData: true})
 					go func() {
 						twork := &sockWork{transport: transport, processor: processor, handler: handler, cliError: cliErrorHandler, isServer: true, host: remoteHost2(transport)}
 						twork.work("")
@@ -164,10 +164,7 @@ func (this *sockWork) processRequests(packet *Packet, processor Itnet) (err erro
 		processor.ProxyCall(ctx, syncId, paramData, pType, cType)
 	case string(_BroadToken):
 		syncId := util.BytesToInt64(bs[:8])
-		ack := false
-		if bs[8] == 1 {
-			ack = true
-		}
+		ack := byteToBool(bs[8])
 		tt, _ := util.TDecode(bs[9:], &TokenTrans{})
 		processor.BroadToken(ctx, syncId, tt, ack)
 	}
@@ -184,9 +181,8 @@ func (this *tfsServerClient) server(addr string, processor Itnet, handler func(t
 	defer myRecovr()
 	clientLinkCache.Put(addr, 0)
 	defer clientLinkCache.Del(addr)
-	this.transport = NewTSocketConf(addr, &TConfiguration{ConnectTimeout: sys.ConnectTimeout})
+	this.transport = NewTSocketConf(addr, &TConfiguration{ConnectTimeout: sys.ConnectTimeout,SnappyMergeData: true})
 	if err = this.transport.Open(); err == nil {
-		this.transport.SetSnappyMergeData(true)
 		twork := &sockWork{transport: this.transport, processor: processor, handler: handler, cliError: cliErrorHandler, isServer: false, host: remoteHost2(this.transport)}
 		twork.work(addr)
 		if async {
@@ -228,7 +224,6 @@ func method(name []byte) (buf *Buffer) {
 func (this *ItnetImpl) Ping(ctx context.Context, pingstr int64) (_err error) {
 	buf := method(_Ping)
 	buf.Write(util.Int64ToBytes(pingstr))
-
 	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
@@ -254,7 +249,6 @@ func (this *ItnetImpl) Auth(ctx context.Context, authKey []byte) (_err error) {
 func (this *ItnetImpl) Auth2(ctx context.Context, authKey []byte) (_err error) {
 	buf := method(_Auth2)
 	buf.Write(authKey)
-
 	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
@@ -383,22 +377,18 @@ func (this *ItnetImpl) CommitTx2(ctx context.Context, syncId int64, txid int64, 
 
 func (this *ItnetImpl) PubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
 	buf := method(_PubMq)
-
 	buf.Write(util.Int64ToBytes(syncId))
 	buf.WriteByte(byte(mqType))
 	buf.Write(bs)
-
 	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
 func (this *ItnetImpl) PullData(ctx context.Context, syncId int64, ldb *LogDataBean) (_err error) {
 	buf := method(_PullData)
-
 	buf.Write(util.Int64ToBytes(syncId))
 	ldbBys, _ := util.Encode(ldb)
 	buf.Write(ldbBys)
-
 	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
@@ -408,18 +398,15 @@ func (this *ItnetImpl) ReInit(ctx context.Context, syncId int64, sbean *SysBean)
 	buf.Write(util.Int64ToBytes(syncId))
 	sbeanBys, _ := util.Encode(sbean)
 	buf.Write(sbeanBys)
-
 	this.socket.WriteWithMerge(buf.Bytes())
 	return
 }
 
 func (this *ItnetImpl) ProxyCall(ctx context.Context, syncId int64, paramData []byte, pType int8, ctype int8) (_err error) {
 	buf := method(_ProxyCall)
-
 	buf.Write(util.Int64ToBytes(syncId))
 	buf.WriteByte(byte(pType))
 	buf.WriteByte(byte(ctype))
-
 	buf.Write(paramData)
 	this.socket.WriteWithMerge(buf.Bytes())
 	return
@@ -428,11 +415,7 @@ func (this *ItnetImpl) ProxyCall(ctx context.Context, syncId int64, paramData []
 func (this *ItnetImpl) BroadToken(ctx context.Context, syncId int64, tt *TokenTrans, ack bool) (_err error) {
 	buf := method(_BroadToken)
 	buf.Write(util.Int64ToBytes(syncId))
-	if ack {
-		buf.WriteByte(1)
-	} else {
-		buf.WriteByte(0)
-	}
+	buf.WriteByte(boolToByte(ack))
 	buf.Write(util.TEncode(tt))
 	this.socket.WriteWithMerge(buf.Bytes())
 	return
