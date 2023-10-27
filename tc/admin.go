@@ -194,9 +194,10 @@ func getLang(hc *tlnet.HttpContext) LANG {
 	return ZH
 }
 
+
 func cssHandler(hc *tlnet.HttpContext) {
 	hc.Writer().Header().Add("Content-Type", "text/html")
-	textTplByText(css, nil, hc)
+	textTplByText(cssContent(), nil, hc)
 }
 
 /***********************************************************************/
