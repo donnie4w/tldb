@@ -87,16 +87,15 @@ func (this *_binLog) readGzip(name string) (bs []byte) {
 	return buf.Bytes()
 }
 
-func (this *_binLog) ReadCurrentLog2GzipByte() (bs []byte, err error) {
+func (this *_binLog) ReadCurrentLog2GzipByte() (bs []byte, _err error) {
 	this.mux4write.Lock()
 	defer this.mux4write.Unlock()
-	// newgz := fmt.Sprint(this.binDir, "/", uint(util.NewTxId()))
-	// err = util.Gzip(newgz, sys.BINLOGNAME, this.binDir)
-	// bs, err = util.ReadFile(newgz)
-	// os.Remove(newgz)
-	if _bs, err := util.ReadFile(this.binDir + "/" + sys.BINLOGNAME); err == nil {
-		if buf, err := util.UnGzip(_bs); err == nil {
+	var _bs []byte
+	if _bs, _err = util.ReadFile(this.binDir + "/" + sys.BINLOGNAME); _err == nil {
+		if buf, err := util.GzipWrite(_bs); err == nil {
 			bs = buf.Bytes()
+		} else {
+			_err = err
 		}
 	}
 	return
