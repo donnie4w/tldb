@@ -14,8 +14,6 @@ import (
 	"time"
 
 	"github.com/donnie4w/gothrift/thrift"
-
-	// "github.com/apache/thrift/lib/go/thrift"
 	. "github.com/donnie4w/tldb/lock"
 	"github.com/donnie4w/tldb/log"
 	. "github.com/donnie4w/tldb/util"
@@ -77,7 +75,6 @@ func myServer2ClientHandler(tc *tlContext) {
 
 func myClient2ServerHandler(tc *tlContext) {
 	defer myRecovr()
-	logger.Info("tc.isClose>>", tc.isClose)
 	if at, err := getAuth(); err == nil && !tc.isClose {
 		if err := tc.Conn.Auth(context.Background(), at); err != nil {
 			logger.Error(err)
