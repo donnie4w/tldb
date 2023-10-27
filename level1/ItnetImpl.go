@@ -70,36 +70,37 @@ func (this *ItnetServ) Pong(ctx context.Context, pongBs []byte) (_err error) {
 }
 
 func (this *ItnetServ) Auth(ctx context.Context, authKey []byte) (_err error) {
-	defer myRecovr()
-	tc := ctx2TlContext(ctx)
-	if authTc(tc, authKey) {
-		if at, err := getAuth(); err == nil {
-			_err = tc.Conn.Auth2(context.Background(), at)
+	go func() {
+		defer myRecovr()
+		tc := ctx2TlContext(ctx)
+		if authTc(tc, authKey) {
+			if at, err := getAuth(); err == nil {
+				_err = tc.Conn.Auth2(context.Background(), at)
+			}
 		}
-	}
+	}()
 	return
 }
 
 func (this *ItnetServ) Auth2(ctx context.Context, authKey []byte) (_err error) {
-	defer myRecovr()
-	tc := ctx2TlContext(ctx)
-	if authTc(tc, authKey) {
-		tc.Conn.SyncNode(context.Background(), nodeWare.GetUUIDNode(), true)
-	}
+	go func() {
+		defer myRecovr()
+		tc := ctx2TlContext(ctx)
+		if authTc(tc, authKey) {
+			tc.Conn.SyncNode(context.Background(), nodeWare.GetUUIDNode(), true)
+		}
+	}()
 	return
 }
 
 func (this *ItnetServ) PonMerge(ctx context.Context, pblist []*PonBean, id int64) (_err error) {
-	go func() {
-		defer myRecovr()
-	}()
 	return
 }
 
 // Parameters:
 //   - Pb
 func (this *ItnetServ) Pon(ctx context.Context, ponBeanBytes []byte, id int64) (err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
@@ -137,8 +138,7 @@ func (this *ItnetServ) Pon(ctx context.Context, ponBeanBytes []byte, id int64) (
 				syncTxAck(tc, tc.RemoteUuid, id, 1)
 			}
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
@@ -178,7 +178,7 @@ func (this *ItnetServ) Pon2(ctx context.Context, pb *PonBean, id int64) (_err er
 }
 
 func (this *ItnetServ) Pon3(ctx context.Context, ponBeanBytes []byte, id int64, ack bool) (_err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		pb := DecodePonBean(ponBeanBytes)
 		if ack {
@@ -202,8 +202,7 @@ func (this *ItnetServ) Pon3(ctx context.Context, ponBeanBytes []byte, id int64, 
 				responeSingleTx(ackPb, pb.Fromuuid, *pb.SyncId)
 			}
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
@@ -255,7 +254,7 @@ func (this *ItnetServ) SyncNode(ctx context.Context, node *Node, ir bool) (_err 
 //   - Num
 //   - Ir
 func (this *ItnetServ) Time(ctx context.Context, pretimenano, timenano int64, num int16, ir bool) (_err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
@@ -278,24 +277,22 @@ func (this *ItnetServ) Time(ctx context.Context, pretimenano, timenano int64, nu
 				tc.Conn.Time(context.Background(), pretimenano, util.Time().UnixNano(), num-1, !ir)
 			}
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
 func (this *ItnetServ) SyncTx(ctx context.Context, syncId int64, result int8) (_err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		if ctx2TlContext(ctx).isAuth {
 			this._SyncTx(syncId, result)
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
 func (this *ItnetServ) SyncTxMerge(ctx context.Context, syncList map[int64]int8) (_err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		if ctx2TlContext(ctx).isAuth {
 			if syncList != nil {
@@ -304,8 +301,7 @@ func (this *ItnetServ) SyncTxMerge(ctx context.Context, syncList map[int64]int8)
 				}
 			}
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
@@ -346,7 +342,7 @@ func (this *ItnetServ) CommitTx(ctx context.Context, syncId int64, txid int64) (
 //   - SyncId
 //   - Commit
 func (this *ItnetServ) CommitTx2(ctx context.Context, syncId int64, txid int64, commit bool) (_err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
@@ -359,13 +355,12 @@ func (this *ItnetServ) CommitTx2(ctx context.Context, syncId int64, txid int64, 
 				await.DelAndPut(syncId, 1)
 			}
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
 func (this *ItnetServ) PubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
@@ -377,8 +372,7 @@ func (this *ItnetServ) PubMq(ctx context.Context, syncId int64, mqType int8, bs 
 				ClusPub(mqType, util.SnappyDecode(bs))
 			}
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
@@ -398,7 +392,7 @@ func (this *ItnetServ) PullData(ctx context.Context, syncId int64, ldb *LogDataB
 }
 
 func (this *ItnetServ) ReInit(ctx context.Context, syncId int64, sbean *SysBean) (_err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
@@ -416,13 +410,12 @@ func (this *ItnetServ) ReInit(ctx context.Context, syncId int64, sbean *SysBean)
 				syncTxAck(tc, tc.RemoteUuid, syncId, 0)
 			}
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
 func (this *ItnetServ) ProxyCall(ctx context.Context, syncId int64, paramData []byte, pType int8, ctype int8) (_err error) {
-	f := func() {
+	go func() {
 		defer myRecovr()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
@@ -562,22 +555,23 @@ func (this *ItnetServ) ProxyCall(ctx context.Context, syncId int64, paramData []
 				}
 			}
 		}
-	}
-	util.GoPool.Go(f)
+	}()
 	return
 }
 
 func (this *ItnetServ) BroadToken(ctx context.Context, syncId int64, tt *TokenTrans, ack bool) (_err error) {
-	defer myRecovr()
-	tc := ctx2TlContext(ctx)
-	if tc.isAuth {
-		if ack {
-			awaitToken.DelAndPut(syncId, tt)
-			syncTxAck(tc, tc.RemoteUuid, syncId, 0)
-		} else {
-			go tokenroute.processTokenTrans(tt, tc.RemoteUuid)
+	go func() {
+		defer myRecovr()
+		tc := ctx2TlContext(ctx)
+		if tc.isAuth {
+			if ack {
+				awaitToken.DelAndPut(syncId, tt)
+				syncTxAck(tc, tc.RemoteUuid, syncId, 0)
+			} else {
+				tokenroute.processTokenTrans(tt, tc.RemoteUuid)
+			}
 		}
-	}
+	}()
 	return
 }
 
