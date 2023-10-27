@@ -58,7 +58,7 @@ func (this *logAdmin) sendBinFile(syncId, lastTime, txid, uuid int64) (err error
 			}
 			return
 		} else {
-			logger.Info("fileNum==0")
+			logger.Info("fileNum >>0")
 			if localt, _txid := log.BinLog.GetLastTime(); _txid > 0 {
 				logger.Info("local  Txid>> ", _txid, " | reqtxid >> ", txid)
 				logger.Info("lo lasttime>> ", localt, " | reqlastTime >> ", lastTime)
@@ -245,17 +245,6 @@ func (this *logAdmin) writeBatch(timenano int64, txid int64, batch *BatchPacket)
 	return
 }
 
-// func (this *logAdmin) writeBatchToBuffer(timenano int64, txid int64, batch *BatchPacket) (write *bytes.Buffer) {
-// 	bpbuf := EncodeBatchPacket(batch)
-// 	defer bpbuf.Free()
-// 	bs := util.SnappyEncode(bpbuf.Bytes())
-// 	buf := util.BufferPool.Get(8 + len(bs))
-// 	buf.Write(util.Int64ToBytes(txid))
-// 	buf.Write(bs)
-// 	write = log.BinLog.WriteWithTimeToBuffer(buf, timenano)
-// 	return
-// }
-
 func (this *logAdmin) writeToDBbyBytes(bs []byte) (err error) {
 	bpl := parseToBatchLog(bs)
 	if err = log.BinLog.WriteBytes(bpl.toBuffer(), bpl.timenano); err == nil {
@@ -289,7 +278,7 @@ func (this *logAdmin) pullData(uuid int64) (txid int64) {
 }
 
 func (this *logAdmin) _pullData(uuid int64, statKey int64) (_txid int64, err error) {
-	logger.Info("pullData:", sys.UUID, " >> ", uuid)
+	logger.Info("pullData:", sys.UUID, " ,uuid>> ", uuid)
 	lastTime, txid := this.getStat()
 	if statKey > 0 {
 		lastTime = statKey
