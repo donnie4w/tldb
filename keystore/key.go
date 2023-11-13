@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package keystore
 
@@ -88,19 +91,19 @@ t4JBiQKBgFWaJZGznXi70MkXPgIVAaRW1saQQjN4pBCHmmHttTUP4wzTftu8amfX
 dGLybeNhOfjk8Ibof7oAksG1YknecPhDYcnsB3aTegNQhBlJ03mDlhiEwq4roAqj
 fugwl2R114U+R6on5tyKY3vTCamRYpo+cpaeajsPGUeHSm9e4tKV
 -----END RSA PRIVATE KEY-----`
-var logger = log.LoggerError
+var loggerError = log.LoggerError
 
 func RsaEncrypt(msg []byte, publickeypath string) (cipherText []byte, err error) {
-	defer _recovr()
+	defer _recover()
 	var buf []byte
 	if publickeypath != "" {
 		if util.IsFileExist(publickeypath) {
 			if buf, err = os.ReadFile(publickeypath); err != nil {
-				logger.Error("rsa encrpt error:", err)
+				loggerError.Error("rsa encrpt error:", err)
 			}
 		} else {
 			err = errors.New(publickeypath + " not exist")
-			logger.Error(publickeypath, " not exist")
+			loggerError.Error(publickeypath, " not exist")
 		}
 	}
 	if publickeypath == "" || err != nil {
@@ -115,16 +118,16 @@ func RsaEncrypt(msg []byte, publickeypath string) (cipherText []byte, err error)
 }
 
 func RsaDecrypt(cipherText []byte, privatekeypath string) (msg []byte, err error) {
-	defer _recovr()
+	defer _recover()
 	var buf []byte
 	if privatekeypath != "" {
 		if util.IsFileExist(privatekeypath) {
 			if buf, err = os.ReadFile(privatekeypath); err != nil {
-				logger.Error("rsa decrpt error:", err)
+				loggerError.Error("rsa decrpt error:", err)
 			}
 		} else {
 			err = errors.New(privatekeypath + " not exist")
-			logger.Error(privatekeypath, " not exist")
+			loggerError.Error(privatekeypath, " not exist")
 		}
 	}
 	if privatekeypath == "" || err != nil {
@@ -137,7 +140,7 @@ func RsaDecrypt(cipherText []byte, privatekeypath string) (msg []byte, err error
 	return
 }
 
-func _recovr() {
+func _recover() {
 	if err := recover(); err != nil {
 	}
 }
