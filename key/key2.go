@@ -1,7 +1,10 @@
-/**
- * Copyright 2023 tldb Author. All Rights Reserved.
- * email: donnie4w@gmail.com
- */
+// Copyright (c) , donnie <donnie4w@gmail.com>
+// All rights reserved.
+//
+// github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package key
 
 import (
