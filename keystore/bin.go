@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package keystore
 
@@ -13,14 +16,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/donnie4w/tldb/log"
 	"github.com/donnie4w/tldb/sys"
 	"github.com/donnie4w/tldb/util"
 )
 
 func Init() {
 	if err := InitKey(sys.DBFILEDIR); err != nil {
-		log.LoggerSys.Error("keyStore init failed:", err)
 		panic("keyStore init failed")
 	}
 
