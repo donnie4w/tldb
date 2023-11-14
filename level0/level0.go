@@ -2,12 +2,14 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level0
 
 import (
-	"fmt"
-	"sync"
+	"os"
 
 	"github.com/donnie4w/tldb/db"
 	. "github.com/donnie4w/tldb/key"
@@ -27,18 +29,25 @@ type level0 struct {
 	_db db.DBEngine
 }
 
-func (this *level0) Serve(wg *sync.WaitGroup) (err error) {
-	defer wg.Done()
+func (this *level0) Serve() (err error) {
+	defer func() {
+		if err := recover(); err != nil {
+			sys.FmtLog(err)
+			os.Exit(0)
+		}
+	}()
 	this._db = db.New(sys.DBFILEDIR + "/db")
 	e1, e2 := Level0.initUUid(), Level0.transRollback()
-	if e1 != nil || e2 != nil {
-		log.LoggerSys.Error("init failed:", e1)
-		panic("init failed")
+	if e1 != nil {
+		panic("Tldb init failed:" + e1.Error())
+	}
+	if e2 != nil {
+		panic("Tldb init failed:" + e2.Error())
 	}
 	log.LogInit()
 	keystore.Init()
-	log.LoggerSys.Write([]byte{'\n', '\n'})
-	log.LoggerSys.Info(sys.SysLog(fmt.Sprint("UUID:", sys.UUID)))
+	sys.BlankLine()
+	sys.FmtLog("UUID:", sys.UUID)
 	return
 }
 
@@ -81,7 +90,7 @@ func (this *level0) GetKeysPrefixLimit(pre string, limit int) (bys []string, err
 
 func (this *level0) Close() (err error) {
 	err = this._db.Close()
-	log.LoggerSys.Info(sys.SysLog(fmt.Sprint("close node:", sys.UUID)))
+	sys.FmtLog("close node:", sys.UUID)
 	return
 }
 
