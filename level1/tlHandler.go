@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
@@ -9,13 +12,12 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/donnie4w/gothrift/thrift"
 	. "github.com/donnie4w/tldb/lock"
-	"github.com/donnie4w/tldb/log"
+	"github.com/donnie4w/tldb/sys"
 	. "github.com/donnie4w/tldb/util"
 )
 
@@ -30,17 +32,17 @@ func (this *tnetServer) handle(processor Itnet, handler func(tc *tlContext), cli
 	}
 }
 
-func (this *tnetServer) Serve(wg *sync.WaitGroup, _addr string) (err error) {
+func (this *tnetServer) Serve(_addr string) (err error) {
 	if !strings.Contains(_addr, ":") {
 		if MatchString("^[0-9]{4,5}$", _addr) {
 			_addr = ":" + _addr
 		} else {
-			log.LoggerSys.Error("address error:" + _addr)
+			sys.FmtLog("address error:" + _addr)
 			err = errors.New("address format error:" + _addr + "| e.g. :4646 | localhost:4646 | 4646")
 		}
 	}
 	// err = tlclientServer.server(wg, _addr, this.servermux.processor, this.servermux.handler, this.servermux.cliError)
-	err = tfsclientserver.server(wg, _addr, this.servermux.processor, this.servermux.handler, this.servermux.cliError)
+	err = tfsclientserver.server(_addr, this.servermux.processor, this.servermux.handler, this.servermux.cliError)
 	return
 }
 
@@ -74,7 +76,7 @@ func myServer2ClientHandler(tc *tlContext) {
 }
 
 func myClient2ServerHandler(tc *tlContext) {
-	defer myRecovr()
+	defer errRecover()
 	if at, err := getAuth(); err == nil && !tc.isClose {
 		if err := tc.Conn.Auth(context.Background(), at); err != nil {
 			logger.Error(err)
@@ -98,7 +100,7 @@ func reconn(tc *tlContext) {
 	if tc == nil || tc.RemoteAddr == "" || tc.RemoteUuid == 0 {
 		return
 	}
-	defer myRecovr()
+	defer errRecover()
 	// defer tc.mux.Unlock()
 	// tc.mux.Lock()
 	logger.Warn("reconn[", tc.RemoteUuid, "][", tc.RemoteAddr, "]")
@@ -138,7 +140,7 @@ func heardbeat() {
 func _heardbeat(tcs []*tlContext) {
 	for _, tc := range tcs {
 		func(tc *tlContext) {
-			defer myRecovr()
+			defer errRecover()
 			tc.Conn.Ping(context.Background(), pistr())
 			if atomic.AddInt64(&tc.pingNum, 1) > 5 {
 				logError.Error("ping failed:[", tc.RemoteUuid, "][", tc.RemoteAddr, "] ping number:", tc.pingNum)
