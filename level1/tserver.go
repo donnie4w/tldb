@@ -2,18 +2,20 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
 import (
 	"context"
 	"errors"
+	"os"
 	"sync"
 
 	"github.com/donnie4w/gothrift/thrift"
 
-	// "github.com/apache/thrift/lib/go/thrift"
-	"github.com/donnie4w/tldb/log"
 	"github.com/donnie4w/tldb/sys"
 )
 
@@ -25,8 +27,7 @@ type tlClientServer struct {
 	serverTransport *thrift.TServerSocket
 }
 
-func (this *tlClientServer) server(wg *sync.WaitGroup, _addr string, itnet Itnet, handler func(tc *tlContext), cliErrorHandler func(tc *tlContext)) (err error) {
-	defer wg.Done()
+func (this *tlClientServer) server(_addr string, itnet Itnet, handler func(tc *tlContext), cliErrorHandler func(tc *tlContext)) (err error) {
 	var serverTransport *thrift.TServerSocket
 	if serverTransport, err = thrift.NewTServerSocketTimeout(_addr, sys.SocketTimeout); err == nil {
 		this.serverTransport = serverTransport
@@ -51,14 +52,14 @@ func (this *tlClientServer) server(wg *sync.WaitGroup, _addr string, itnet Itnet
 		}
 	}
 	if !this.isClose && err != nil {
-		log.LoggerSys.Error("server init failed:", err)
-		panic("server init failed:" + err.Error())
+		sys.FmtLog("server init failed:", err)
+		os.Exit(0)
 	}
 	return
 }
 
 func (this *tlClientServer) close() {
-	defer myRecovr()
+	defer errRecover()
 	this.isClose = true
 	this.serverTransport.Close()
 }
@@ -73,7 +74,7 @@ type transportWork struct {
 }
 
 func (this *transportWork) work(addr string) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	tlcontext := newTlContext(this.transport)
 	tlcontext.RemoteAddr = addr
 	tlcontext.isServer = this.isServer
@@ -130,7 +131,7 @@ type tlServerClient struct {
 var tlserverclient = &tlServerClient{}
 
 func (this *tlServerClient) server(addr string, itnet Itnet, handler func(tc *tlContext), cliErrorHandler func(tc *tlContext), async bool) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	clientLinkCache.Put(addr, 0)
 	defer clientLinkCache.Del(addr)
 	transport := thrift.NewTSocketConf(addr, &thrift.TConfiguration{ConnectTimeout: sys.ConnectTimeout, SocketTimeout: sys.SocketTimeout})
@@ -153,7 +154,7 @@ func (this *tlServerClient) server(addr string, itnet Itnet, handler func(tc *tl
 }
 
 func (this *tlServerClient) Close() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	return this.transport.Close()
 }
 
@@ -165,13 +166,13 @@ type ItnetWrite struct {
 }
 
 func (this *ItnetWrite) Ping(ctx context.Context, pingstr int64) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.Ping(ctx, pingstr)
 }
 func (this *ItnetWrite) Pong(ctx context.Context, pongBs []byte) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.Pong(ctx, pongBs)
@@ -180,7 +181,7 @@ func (this *ItnetWrite) Pong(ctx context.Context, pongBs []byte) (_err error) {
 // Parameters:
 //   - AuthKey
 func (this *ItnetWrite) Auth(ctx context.Context, authKey []byte) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.Auth(ctx, authKey)
@@ -189,14 +190,14 @@ func (this *ItnetWrite) Auth(ctx context.Context, authKey []byte) (_err error) {
 // Parameters:
 //   - AuthKey
 func (this *ItnetWrite) Auth2(ctx context.Context, authKey []byte) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.Auth2(ctx, authKey)
 }
 
 func (this *ItnetWrite) PonMerge(ctx context.Context, pblist []*PonBean, id int64) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.PonMerge(ctx, pblist, id)
@@ -205,7 +206,7 @@ func (this *ItnetWrite) PonMerge(ctx context.Context, pblist []*PonBean, id int6
 // Parameters:
 //   - Pb
 func (this *ItnetWrite) Pon(ctx context.Context, ponBeanBytes []byte, id int64) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.Pon(ctx, ponBeanBytes, id)
@@ -214,7 +215,7 @@ func (this *ItnetWrite) Pon(ctx context.Context, ponBeanBytes []byte, id int64) 
 // Parameters:
 //   - Pb
 func (this *ItnetWrite) Pon2(ctx context.Context, pb *PonBean, id int64) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.Pon2(ctx, pb, id)
@@ -223,7 +224,7 @@ func (this *ItnetWrite) Pon2(ctx context.Context, pb *PonBean, id int64) (_err e
 // Parameters:
 //   - Pb
 func (this *ItnetWrite) Pon3(ctx context.Context, ponBeanBytes []byte, id int64, ack bool) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.Pon3(ctx, ponBeanBytes, id, ack)
@@ -235,7 +236,7 @@ func (this *ItnetWrite) Pon3(ctx context.Context, ponBeanBytes []byte, id int64,
 //   - Num
 //   - Ir
 func (this *ItnetWrite) Time(ctx context.Context, pretimenano int64, timenano int64, num int16, ir bool) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.Time(ctx, pretimenano, timenano, num, ir)
@@ -245,7 +246,7 @@ func (this *ItnetWrite) Time(ctx context.Context, pretimenano int64, timenano in
 //   - Node
 //   - Ir
 func (this *ItnetWrite) SyncNode(ctx context.Context, node *Node, ir bool) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.SyncNode(ctx, node, ir)
@@ -253,7 +254,7 @@ func (this *ItnetWrite) SyncNode(ctx context.Context, node *Node, ir bool) (_err
 
 func (this *ItnetWrite) SyncTx(ctx context.Context, syncId int64, result int8) (_err error) {
 	if syncId > 0 {
-		defer myRecovr()
+		defer errRecover()
 		this.mux.Lock()
 		defer this.mux.Unlock()
 		_err = this.conn.SyncTx(ctx, syncId, result)
@@ -262,7 +263,7 @@ func (this *ItnetWrite) SyncTx(ctx context.Context, syncId int64, result int8) (
 }
 
 func (this *ItnetWrite) SyncTxMerge(ctx context.Context, syncList map[int64]int8) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.SyncTxMerge(ctx, syncList)
@@ -272,7 +273,7 @@ func (this *ItnetWrite) SyncTxMerge(ctx context.Context, syncList map[int64]int8
 //   - SyncId
 //   - Txid
 func (this *ItnetWrite) CommitTx(ctx context.Context, syncId int64, txid int64) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.CommitTx(ctx, syncId, txid)
@@ -282,42 +283,42 @@ func (this *ItnetWrite) CommitTx(ctx context.Context, syncId int64, txid int64) 
 //   - SyncId
 //   - Commit
 func (this *ItnetWrite) CommitTx2(ctx context.Context, syncId int64, txid int64, commit bool) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.CommitTx2(ctx, syncId, txid, commit)
 }
 
 func (this *ItnetWrite) PubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.PubMq(ctx, syncId, mqType, bs)
 }
 
 func (this *ItnetWrite) PullData(ctx context.Context, syncId int64, ldb *LogDataBean) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.PullData(ctx, syncId, ldb)
 }
 
 func (this *ItnetWrite) ReInit(ctx context.Context, syncId int64, sbean *SysBean) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.ReInit(ctx, syncId, sbean)
 }
 
 func (this *ItnetWrite) ProxyCall(ctx context.Context, syncId int64, paramData []byte, pType int8, ctype int8) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.ProxyCall(ctx, syncId, paramData, pType, ctype)
 }
 
 func (this *ItnetWrite) BroadToken(ctx context.Context, syncId int64, tt *TokenTrans, ack bool) (_err error) {
-	defer myRecovr()
+	defer errRecover()
 	this.mux.Lock()
 	defer this.mux.Unlock()
 	return this.conn.BroadToken(ctx, syncId, tt, ack)
