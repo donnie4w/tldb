@@ -2,15 +2,16 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
-
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package level1
 
 import (
 	"context"
-	"sync"
+	"os"
 
 	. "github.com/donnie4w/gofer/buffer"
-	"github.com/donnie4w/tldb/log"
 	"github.com/donnie4w/tldb/sys"
 	"github.com/donnie4w/tldb/util"
 	. "github.com/donnie4w/tsf/packet"
@@ -24,8 +25,7 @@ type tfsClientServer struct {
 
 var tfsclientserver = &tfsClientServer{}
 
-func (this *tfsClientServer) server(wg *sync.WaitGroup, _addr string, processor Itnet, handler func(tc *tlContext), cliErrorHandler func(tc *tlContext)) (err error) {
-	defer wg.Done()
+func (this *tfsClientServer) server(_addr string, processor Itnet, handler func(tc *tlContext), cliErrorHandler func(tc *tlContext)) (err error) {
 	if this.serverTransport, err = NewTServerSocketTimeout(_addr, sys.ConnectTimeout); err == nil {
 		if err = this.serverTransport.Listen(); err == nil {
 			sys.ADDR = _addr
@@ -43,14 +43,14 @@ func (this *tfsClientServer) server(wg *sync.WaitGroup, _addr string, processor 
 		}
 	}
 	if !this.isClose && err != nil {
-		log.LoggerSys.Error("server init failed:", err)
-		panic("server init failed:" + err.Error())
+		sys.FmtLog("Server init failed:", err)
+		os.Exit(0)
 	}
 	return
 }
 
 func (this *tfsClientServer) close() {
-	defer myRecovr()
+	defer errRecover()
 	this.isClose = true
 	this.serverTransport.Close()
 }
@@ -66,7 +66,7 @@ type sockWork struct {
 }
 
 func (this *sockWork) work(addr string) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	tlcontext := newTlContext2(this.transport)
 	tlcontext.RemoteAddr = addr
 	tlcontext.isServer = this.isServer
@@ -85,7 +85,7 @@ func (this *sockWork) final() {
 }
 
 func (this *sockWork) processRequests(packet *Packet, processor Itnet) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	bs := packet.ToBytes()
 	ln := int(int8(bs[0]))
 	method := string(bs[1 : ln+1])
@@ -178,10 +178,10 @@ type tfsServerClient struct {
 var tfsserverclient = &tfsServerClient{}
 
 func (this *tfsServerClient) server(addr string, processor Itnet, handler func(tc *tlContext), cliErrorHandler func(tc *tlContext), async bool) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	clientLinkCache.Put(addr, 0)
 	defer clientLinkCache.Del(addr)
-	this.transport = NewTSocketConf(addr, &TConfiguration{ConnectTimeout: sys.ConnectTimeout,SnappyMergeData: true})
+	this.transport = NewTSocketConf(addr, &TConfiguration{ConnectTimeout: sys.ConnectTimeout, SnappyMergeData: true})
 	if err = this.transport.Open(); err == nil {
 		twork := &sockWork{transport: this.transport, processor: processor, handler: handler, cliError: cliErrorHandler, isServer: false, host: remoteHost2(this.transport)}
 		twork.work(addr)
@@ -201,7 +201,7 @@ func (this *tfsServerClient) server(addr string, processor Itnet, handler func(t
 }
 
 func (this *tfsServerClient) Close() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	return this.transport.Close()
 }
 
