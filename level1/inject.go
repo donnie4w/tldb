@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
@@ -28,4 +31,5 @@ var DeleteBatches func(call int, tablename string, fromId, toId int64) (err erro
 var DeleteBatch func(call int, tablename string, ids []int64) (err error)
 var SelectByIdxDescLimit func(call int, table_name string, idx_name string, _idx_value []byte, startId int64, limit int64) (_r []*TableStub, err error)
 var SelectByIdxAscLimit func(call int, table_name string, idx_name string, _idx_value []byte, startId int64, limit int64) (_r []*TableStub, err error)
+var SelectIdByIdxSeq func(call int, table_name string, idx_name string, _idx_value []byte, seq int64) (_r int64, err error)
 var ClusPub func(mqType int8, bs []byte) (err error)
