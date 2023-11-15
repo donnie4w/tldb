@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
@@ -92,7 +95,7 @@ func (this *_taskWare) timerForExpired() {
 		select {
 		case <-ticker.C:
 			func() {
-				defer myRecovr()
+				defer errRecover()
 				this.expiredPoolCache.BackForEach(func(k, v int64) bool {
 					if v+3600 < Time().Unix() {
 						this.delExpired(k)
@@ -185,7 +188,7 @@ func (this *batchTask) event() (icomes, noMatch bool) {
 }
 
 func (this *batchTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	if !sys.IsStandAlone() {
 		if !this.verifyPB.DoCommit {
@@ -292,7 +295,7 @@ func (this *batchProcessTask) event() (icomes, noMatch bool) {
 }
 
 func (this *batchProcessTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	if !this.verifyPB.DoCommit {
 		return
@@ -392,7 +395,7 @@ func (this *getTask) event() (icomes, noMatch bool) {
 }
 
 func (this *getTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	return
 }
@@ -485,7 +488,7 @@ func (this *getRemoteTask) event() (icomes, noMatch bool) {
 }
 
 func (this *getRemoteTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	return
 }
@@ -570,7 +573,7 @@ func (this *incrTask) event() (icomes, noMatch bool) {
 }
 
 func (this *incrTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	return
 }
@@ -656,7 +659,7 @@ func (this *syncKeyTask) event() (icomes, noMatch bool) {
 }
 
 func (this *syncKeyTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	return
 }
@@ -748,7 +751,7 @@ func (this *statTask) event() (icomes, noMatch bool) {
 }
 
 func (this *statTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	if this.firstPB.Fromuuid == sys.UUID {
 		setStat(sys.STATTYPE(this.firstPB.Stat.Stat), time.Duration(this.firstPB.Stat.Timenano-Time().UnixNano()))
@@ -853,7 +856,7 @@ func (this *loadTask) event() (icomes, noMatch bool) {
 }
 
 func (this *loadTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	return
 }
@@ -944,7 +947,7 @@ func (this *timeTask) event() (icomes, noMatch bool) {
 }
 
 func (this *timeTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	return
 }
@@ -1031,7 +1034,7 @@ func (this *seqTask) event() (icomes, noMatch bool) {
 }
 
 func (this *seqTask) task() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	defer taskWare.deldone(this.txid)
 	return
 }
