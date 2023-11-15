@@ -2,7 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
-
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package level1
 
 import (
@@ -334,7 +336,7 @@ func (this *_nodeWare) singleBroadAlltime(pb *PonBean, uuid int64, pontype PON_T
 // }
 
 func (this *_nodeWare) sendPb(exce *sys.Exception, pb *PonBean, pontype PON_TYPE, uuid int64, wg *sync.WaitGroup, timeout time.Duration, alltime bool) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	spTime := 5 * time.Second
 	for timeout > 0 {
 		sendId := newTxId()
@@ -373,7 +375,7 @@ END:
 }
 
 func (this *_nodeWare) sendPbAlltime(pb *PonBean, pontype PON_TYPE, uuid int64, timeout time.Duration, isBack bool) {
-	defer myRecovr()
+	defer errRecover()
 	spTime := 5 * time.Second
 	backcount := 0
 	for timeout > 0 {
@@ -405,7 +407,7 @@ END:
 }
 
 func (this *_nodeWare) _sendPb(pb *PonBean, pontype PON_TYPE, uuid, sendId int64) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	if tc := this.GetTlContext(uuid); tc != nil {
 		switch pontype {
 		case PON:
@@ -421,7 +423,7 @@ func (this *_nodeWare) _sendPb(pb *PonBean, pontype PON_TYPE, uuid, sendId int64
 }
 
 func (this *_nodeWare) commitTx(uuid, sendId, txid int64, timeout time.Duration) (_r int8, err error) {
-	defer myRecovr()
+	defer errRecover()
 	if tc := this.GetTlContext(uuid); tc != nil {
 		if sendId == 0 {
 			sendId = newTxId()
@@ -441,7 +443,7 @@ func (this *_nodeWare) commitTx(uuid, sendId, txid int64, timeout time.Duration)
 }
 
 func (this *_nodeWare) commitTx2(uuid, sendId, txid int64, commit bool, timeout time.Duration) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	if tc := this.GetTlContext(uuid); tc != nil {
 		if sendId == 0 {
 			sendId = newTxId()
@@ -474,7 +476,7 @@ func (this *_nodeWare) broadcastMQ(mqType int8, bs []byte) {
 }
 
 func (this *_nodeWare) pubMq(uuid, sendId int64, mqType int8, bs []byte, timeout time.Duration) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	c := 10
 	if sendId == 0 {
 		sendId = newTxId()
@@ -501,7 +503,7 @@ END:
 }
 
 func (this *_nodeWare) pullData(uuid, sendId int64, ldb *LogDataBean, timeout time.Duration, async bool) (_r *LogDataBean, err error) {
-	defer myRecovr()
+	defer errRecover()
 	if tc := this.GetTlContext(uuid); tc != nil {
 		if sendId == 0 && !async {
 			sendId = newTxId()
@@ -613,7 +615,7 @@ func (this *_nodeWare) broadcastReinit(sbean *SysBean) (exce *sys.Exception) {
 
 // over time = timeout*30
 func (this *_nodeWare) reinit(exce *sys.Exception, uuid int64, sbean *SysBean, wg *sync.WaitGroup) {
-	defer myRecovr()
+	defer errRecover()
 	limit := 30
 	var err error
 	sendId := newTxId()
@@ -664,7 +666,7 @@ func (this *_nodeWare) broadcastRunNodeProxy(paramData []byte, uuid int64, pType
 }
 
 func (this *_nodeWare) proxyCall(exce *sys.Exception, uuid int64, paramData []byte, pType int8, ctype int8, timeout time.Duration) (_r *TableParam) {
-	defer myRecovr()
+	defer errRecover()
 	if tc := this.GetTlContext(uuid); tc != nil {
 		syncId := newTxId()
 		if err := tc.Conn.ProxyCall(context.Background(), syncId, paramData, pType, ctype); err == nil {
@@ -685,7 +687,7 @@ func (this *_nodeWare) proxyCall(exce *sys.Exception, uuid int64, paramData []by
 }
 
 func (this *_nodeWare) broadToken(exce *sys.Exception, sendId, uuid int64, tt *TokenTrans, ack bool, wg *sync.WaitGroup) (_r *TokenTrans) {
-	defer myRecovr()
+	defer errRecover()
 	if uuid == sys.UUID {
 		return
 	}
@@ -739,14 +741,14 @@ END:
 /**************************************************************************/
 
 func syncTime(tc *tlContext) {
-	defer myRecovr()
+	defer errRecover()
 	if tc != nil {
 		tc.Conn.Time(context.Background(), time.Now().UnixNano(), 0, 200, false)
 	}
 }
 
 func syncNode(tc *tlContext) {
-	defer myRecovr()
+	defer errRecover()
 	if tc != nil {
 		tc.Conn.SyncNode(context.Background(), nodeWare.GetUUIDNode(), true)
 	}
