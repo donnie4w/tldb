@@ -2,7 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
-
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package level1
 
 import (
@@ -100,7 +102,7 @@ func (this *strToken) updateTime() {
 }
 
 func (this *strToken) recvToken(token string) (isEmpty bool, ok bool) {
-	defer myRecovr()
+	defer errRecover()
 	logger.Info("recvToken>>>", token)
 	this.mux.Lock()
 	defer this.mux.Unlock()
@@ -142,7 +144,7 @@ func processBroadChan() {
 		select {
 		case resp := <-broadChan:
 			func() {
-				defer myRecovr()
+				defer errRecover()
 				if resp.uuid > 0 {
 					tt := &TokenTrans{ReqType: TOKEN_RESPUUID, Str: resp.str, Status: 0, TokenFlag: 0, Token: resp.token}
 					if tt := nodeWare.broadToken(nil, 0, resp.uuid, tt, false, nil); tt == nil || tt.ReqType != TOKEN_ACK {
