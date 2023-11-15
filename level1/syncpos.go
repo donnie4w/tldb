@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
@@ -10,7 +13,7 @@ import (
 )
 
 func pos_stat(_stat sys.STATTYPE, timenano int64) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	txid := newTxId()
 	pb := newPonBean(txid, 5, 0, nil, nil)
 	pb.Stat, pb.IsFirst = &Stat{Stat: int8(_stat), Timenano: timenano}, true
