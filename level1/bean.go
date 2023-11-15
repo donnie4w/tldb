@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
@@ -164,7 +167,7 @@ func (this *batchLog) toBuffer() (write *Buffer) {
 }
 
 func parseToBatchLog(bs []byte) (bl *batchLog) {
-	defer myRecovr()
+	defer errRecover()
 	timenano := util.BytesToInt64(bs[4:12])
 	txid := util.BytesToInt64(bs[12:20])
 	batch := DecodeBatchPacket(util.SnappyDecode(bs[20:]))
