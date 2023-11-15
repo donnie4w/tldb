@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
@@ -23,31 +26,31 @@ var Level1 = &level1{}
 type level1 struct{}
 
 func (this *level1) GetLocalLike(key string) (datamap map[string][]byte, err error) {
-	defer myRecovr()
+	defer errRecover()
 	datamap, err = Level0.GetByPrefix(key)
 	return
 }
 
 func (this *level1) GetLocalKeysLike(key string) (keys []string, err error) {
-	defer myRecovr()
+	defer errRecover()
 	keys, err = Level0.GetKeysPrefix(key)
 	return
 }
 
 func (this *level1) GetLocalKeysLikeLimit(key string, limit int) (keys []string, err error) {
-	defer myRecovr()
+	defer errRecover()
 	keys, err = Level0.GetKeysPrefixLimit(key, limit)
 	return
 }
 
 func (this *level1) GetLocal(key string) (value []byte, err error) {
-	defer myRecovr()
+	defer errRecover()
 	value, err = Level0.Get(key)
 	return
 }
 
 func (this *level1) GetValue(key string) (value []byte, err error) {
-	defer myRecovr()
+	defer errRecover()
 	var bs []byte
 	if bs, err = Level0.Get(key); err == nil {
 		data := decodeDataBeen(bs)
@@ -61,7 +64,7 @@ func (this *level1) GetValue(key string) (value []byte, err error) {
 }
 
 func (this *level1) GetValues(key []string) (_r map[string][]byte, err error) {
-	defer myRecovr()
+	defer errRecover()
 	return
 }
 
@@ -73,7 +76,7 @@ func (this *level1) Batch(optype int16, kvmap map[string][]byte, dels []string) 
 	if !sys.IsRUN() || !nodeWare.IsClusRun() {
 		return Errors(sys.ERR_NO_RUNSTAT)
 	}
-	defer myRecovr()
+	defer errRecover()
 	pon := Pon()
 	excuuuids := pon.ExcuBatchNodes(kvmap, dels)
 	txid := newTxId()
@@ -124,7 +127,7 @@ func (this *level1) GetAndIncrKey(key string) (_r int64, _err error) {
 		_err = Errors(sys.ERR_NO_CLUSTER)
 		return
 	}
-	defer myRecovr()
+	defer errRecover()
 	if v, _ := pos_incrNetKey(key); v != nil {
 		_r = *v
 	}
@@ -135,7 +138,7 @@ func (this *level1) GetAndIncrKey(key string) (_r int64, _err error) {
 }
 
 func pos_incrNetKey(key string) (_r *int64, err error) {
-	defer myRecovr()
+	defer errRecover()
 	if !nodeWare.IsClusRun() || !sys.IsRUN() {
 		err = Errors(sys.ERR_NO_CLUSTER)
 		return
@@ -235,7 +238,7 @@ func incrNetKeyExcu(key string, pb *PonBean) (value int64, err error) {
 }
 
 func pos_Get(key string, uuids []int64) (value []byte, err error) {
-	defer myRecovr()
+	defer errRecover()
 	if key == "" || uuids == nil || len(uuids) == 0 {
 		return nil, Errors(sys.ERR_NO_MATCH_PARAM)
 	}
@@ -273,7 +276,7 @@ func pos_Get(key string, uuids []int64) (value []byte, err error) {
 }
 
 func pos_GetRemote(key string) (value []byte, err error) {
-	defer myRecovr()
+	defer errRecover()
 	if key == "" {
 		return nil, Errors(sys.ERR_NO_MATCH_PARAM)
 	}
@@ -291,7 +294,7 @@ func pos_GetRemote(key string) (value []byte, err error) {
 }
 
 func pos_syncKey(key string) (value int64, err error) {
-	defer myRecovr()
+	defer errRecover()
 	if nodeWare.tlMap.Len() == 0 {
 		return
 	}
