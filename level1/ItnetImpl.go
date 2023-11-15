@@ -2,7 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
-
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package level1
 
 import (
@@ -30,7 +32,7 @@ func ctx2TlContext(ctx context.Context) *tlContext {
 // //////////////////////////////////////
 func (this *ItnetServ) Ping(ctx context.Context, pingstr int64) (_err error) {
 	f := func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.pongNum > 10 && !tc.isAuth {
 			logError.Error("ping error:", tc.RemoteUuid)
@@ -49,7 +51,7 @@ func (this *ItnetServ) Ping(ctx context.Context, pingstr int64) (_err error) {
 
 func (this *ItnetServ) Pong(ctx context.Context, pongBs []byte) (_err error) {
 	f := func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		defer this.mux.Unlock(tc.Id)
 		this.mux.Lock(tc.Id)
@@ -71,7 +73,7 @@ func (this *ItnetServ) Pong(ctx context.Context, pongBs []byte) (_err error) {
 
 func (this *ItnetServ) Auth(ctx context.Context, authKey []byte) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if authTc(tc, authKey) {
 			if at, err := getAuth(); err == nil {
@@ -84,7 +86,7 @@ func (this *ItnetServ) Auth(ctx context.Context, authKey []byte) (_err error) {
 
 func (this *ItnetServ) Auth2(ctx context.Context, authKey []byte) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if authTc(tc, authKey) {
 			tc.Conn.SyncNode(context.Background(), nodeWare.GetUUIDNode(), true)
@@ -101,7 +103,7 @@ func (this *ItnetServ) PonMerge(ctx context.Context, pblist []*PonBean, id int64
 //   - Pb
 func (this *ItnetServ) Pon(ctx context.Context, ponBeanBytes []byte, id int64) (err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			pb := DecodePonBean(ponBeanBytes)
@@ -144,7 +146,7 @@ func (this *ItnetServ) Pon(ctx context.Context, ponBeanBytes []byte, id int64) (
 
 func (this *ItnetServ) Pon2(ctx context.Context, pb *PonBean, id int64) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			syncTxAck(tc, tc.RemoteUuid, id, 0)
@@ -179,7 +181,7 @@ func (this *ItnetServ) Pon2(ctx context.Context, pb *PonBean, id int64) (_err er
 
 func (this *ItnetServ) Pon3(ctx context.Context, ponBeanBytes []byte, id int64, ack bool) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		pb := DecodePonBean(ponBeanBytes)
 		if ack {
 			awaitPB.DelAndPut(id, pb)
@@ -208,7 +210,7 @@ func (this *ItnetServ) Pon3(ctx context.Context, ponBeanBytes []byte, id int64, 
 
 func (this *ItnetServ) SyncNode(ctx context.Context, node *Node, ir bool) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			if tc.NameSpace != node.Ns {
@@ -255,7 +257,7 @@ func (this *ItnetServ) SyncNode(ctx context.Context, node *Node, ir bool) (_err 
 //   - Ir
 func (this *ItnetServ) Time(ctx context.Context, pretimenano, timenano int64, num int16, ir bool) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			defer this.mux.Unlock(tc.Id)
@@ -283,7 +285,7 @@ func (this *ItnetServ) Time(ctx context.Context, pretimenano, timenano int64, nu
 
 func (this *ItnetServ) SyncTx(ctx context.Context, syncId int64, result int8) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		if ctx2TlContext(ctx).isAuth {
 			this._SyncTx(syncId, result)
 		}
@@ -293,7 +295,7 @@ func (this *ItnetServ) SyncTx(ctx context.Context, syncId int64, result int8) (_
 
 func (this *ItnetServ) SyncTxMerge(ctx context.Context, syncList map[int64]int8) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		if ctx2TlContext(ctx).isAuth {
 			if syncList != nil {
 				for k, v := range syncList {
@@ -306,7 +308,7 @@ func (this *ItnetServ) SyncTxMerge(ctx context.Context, syncList map[int64]int8)
 }
 
 func (this *ItnetServ) _SyncTx(syncId int64, result int8) {
-	defer myRecovr()
+	defer errRecover()
 	if result == 0 {
 		await.DelAndClose(syncId)
 	} else {
@@ -343,7 +345,7 @@ func (this *ItnetServ) CommitTx(ctx context.Context, syncId int64, txid int64) (
 //   - Commit
 func (this *ItnetServ) CommitTx2(ctx context.Context, syncId int64, txid int64, commit bool) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			if syncId > 0 {
@@ -361,7 +363,7 @@ func (this *ItnetServ) CommitTx2(ctx context.Context, syncId int64, txid int64, 
 
 func (this *ItnetServ) PubMq(ctx context.Context, syncId int64, mqType int8, bs []byte) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			if syncId > 0 {
@@ -378,7 +380,7 @@ func (this *ItnetServ) PubMq(ctx context.Context, syncId int64, mqType int8, bs 
 
 func (this *ItnetServ) PullData(ctx context.Context, syncId int64, ldb *LogDataBean) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			if ldb.Type == 2 && syncId > 0 {
@@ -393,7 +395,7 @@ func (this *ItnetServ) PullData(ctx context.Context, syncId int64, ldb *LogDataB
 
 func (this *ItnetServ) ReInit(ctx context.Context, syncId int64, sbean *SysBean) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			if sbean.DBMode > 0 {
@@ -416,7 +418,7 @@ func (this *ItnetServ) ReInit(ctx context.Context, syncId int64, sbean *SysBean)
 
 func (this *ItnetServ) ProxyCall(ctx context.Context, syncId int64, paramData []byte, pType int8, ctype int8) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			if ctype == 1 {
@@ -542,6 +544,12 @@ func (this *ItnetServ) ProxyCall(ctx context.Context, syncId int64, paramData []
 						if err != nil {
 							tp.Err = err.Error()
 						}
+					case 22:
+						_r, err := SelectIdByIdxSeq(1, tp.TableName, tp.IdxName, tp.IdxValue, tp.Seq)
+						tp = &TableParam{Seq: _r}
+						if err != nil {
+							tp.Err = err.Error()
+						}
 					}
 					bs := util.TEncode(tp)
 					ackProxy(tc, tc.RemoteUuid, syncId, util.SnappyEncode(bs), pType)
@@ -561,7 +569,7 @@ func (this *ItnetServ) ProxyCall(ctx context.Context, syncId int64, paramData []
 
 func (this *ItnetServ) BroadToken(ctx context.Context, syncId int64, tt *TokenTrans, ack bool) (_err error) {
 	go func() {
-		defer myRecovr()
+		defer errRecover()
 		tc := ctx2TlContext(ctx)
 		if tc.isAuth {
 			if ack {
@@ -578,7 +586,7 @@ func (this *ItnetServ) BroadToken(ctx context.Context, syncId int64, tt *TokenTr
 // //////////////////////////////////////////////////////////////////
 
 func syncTxAck(tc *tlContext, uuid, syncId int64, result int8) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	if sys.MEGERCLUSACK {
 		// var uuidMg = UUID(uuid)
 		// uuidMg.syncTxAdd(&syncBean{syncId, result}, func() bool { return false }, uuidMg.syncTxMerge)
@@ -598,7 +606,7 @@ func syncTxAck(tc *tlContext, uuid, syncId int64, result int8) (err error) {
 }
 
 func ackProxy(tc *tlContext, uuid, syncId int64, paramData []byte, pType int8) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	if err = tc.Conn.ProxyCall(context.Background(), syncId, paramData, pType, 2); err != nil {
 		if _tc := nodeWare.GetTlContext(uuid); _tc != nil {
 			err = _tc.Conn.ProxyCall(context.Background(), syncId, paramData, pType, 2)
