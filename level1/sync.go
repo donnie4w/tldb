@@ -2,7 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
-
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package level1
 
 import (
@@ -41,7 +43,7 @@ func (this *syncTx) flow(t time.Duration) {
 		select {
 		case <-ticker.C:
 			func() {
-				defer myRecovr()
+				defer errRecover()
 				if !sys.IsPROXY() && isSyncOver() {
 					tlog.LoadCacheLog()
 				}
