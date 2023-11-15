@@ -2,20 +2,20 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
 import (
 	"errors"
-	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	. "github.com/donnie4w/gofer/buffer"
 	"github.com/donnie4w/tldb/level0"
 	. "github.com/donnie4w/tldb/lock"
-	"github.com/donnie4w/tldb/log"
 	. "github.com/donnie4w/tldb/stub"
 	"github.com/donnie4w/tldb/sys"
 	"github.com/donnie4w/tldb/util"
@@ -42,22 +42,20 @@ var tnetservice = &tnetService{}
 
 type tnetService struct{}
 
-func (this *tnetService) Serve(wg *sync.WaitGroup) (err error) {
+func (this *tnetService) Serve() (err error) {
 	synctx.init()
 	if !sys.IsStandAlone() {
-		this._serve(wg, sys.ADDR)
-	} else {
-		wg.Done()
-	}
+		this._serve(sys.ADDR)
+	} 
 	return
 }
 
-func (this *tnetService) _serve(wg *sync.WaitGroup, addr string) {
-	log.LoggerSys.Info(sys.SysLog(fmt.Sprint("service start[", addr, "] ns[", sys.NAMESPACE, "]")))
+func (this *tnetService) _serve(addr string) {
+	sys.FmtLog("service start[", addr, "] ns[", sys.NAMESPACE, "]")
 	tnetserver := new(tnetServer)
 	tnetserver.handle(&ItnetServ{NewNumLock(64)}, myServer2ClientHandler, mySecvErrorHandler)
 	go heardbeat()
-	tnetserver.Serve(wg, addr)
+	tnetserver.Serve(addr)
 }
 
 func (this *tnetService) Connect(addr string, async bool) (err1, err2 error) {
@@ -90,57 +88,57 @@ func (this *tnetService) Close() (err error) {
 }
 
 func pubTxSyncWithTimeOut(pb *PonBean, to time.Duration) *sys.Exception {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.broadcastSync(pb, PON, to, false)
 }
 
 func pubTxSyncAlltime(pb *PonBean) *sys.Exception {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.broadcastSync(pb, PON, sys.WaitTimeout, true)
 }
 
 func pubTxSync(pb *PonBean) *sys.Exception {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.broadcastSync(pb, PON, sys.WaitTimeout, false)
 }
 
 func pubTxAsync(pb *PonBean) {
-	defer myRecovr()
+	defer errRecover()
 	nodeWare.broadcast(pb, PON, sys.WaitTimeout, false)
 }
 
 func pubTxByRunAsync(pb *PonBean, timeout time.Duration) {
-	defer myRecovr()
+	defer errRecover()
 	nodeWare.broadcast(pb, PON, timeout, true)
 }
 
 func pubSingleTxAlltime(pb *PonBean, uuid int64, isBack bool) {
-	defer myRecovr()
+	defer errRecover()
 	nodeWare.singleBroadAlltime(pb, uuid, PON, 240*time.Hour, isBack)
 }
 
 func pubSingleTx(pb *PonBean, uuid int64) error {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.singleBroad(pb, uuid, PON, sys.WaitTimeout, false)
 }
 
 func requestSingleTx(pb *PonBean, uuid int64) (*PonBean, error) {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.pon3(uuid, 0, false, pb, sys.ReadTimeout)
 }
 
 func responeSingleTx(pb *PonBean, uuid, syncId int64) (*PonBean, error) {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.pon3(uuid, syncId, true, pb, sys.ReadTimeout)
 }
 
 func pub2TxSync(pb *PonBean) *sys.Exception {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.broadcastSync(pb, PON2, sys.WaitTimeout, false)
 }
 
 func pub2SingleTx(pb *PonBean, uuid int64) error {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.singleBroad(pb, uuid, PON2, sys.WaitTimeout, false)
 }
 
@@ -161,12 +159,12 @@ func removeNode(uuid int64) {
 /********************************************************/
 
 func BroadcastMQ(mqType int8, bs []byte) {
-	defer myRecovr()
+	defer errRecover()
 	nodeWare.broadcastMQ(mqType, util.SnappyEncode(bs))
 }
 
 func BroadcastReinit(sbean *SysBean) (exce *sys.Exception) {
-	defer myRecovr()
+	defer errRecover()
 	if sbean == nil {
 		sbean = &SysBean{int8(sys.DBMode), int32(sys.STORENODENUM), 0}
 	}
@@ -174,7 +172,7 @@ func BroadcastReinit(sbean *SysBean) (exce *sys.Exception) {
 }
 
 func BroadcastProxy(tp *TableParam, uuid int64, pType int8, ctype int8) (_r *TableParam, exce *sys.Exception) {
-	defer myRecovr()
+	defer errRecover()
 	return nodeWare.broadcastRunNodeProxy(util.TEncode(tp), uuid, pType, ctype)
 }
 
@@ -187,7 +185,7 @@ func WriteBatchLogBuffer(bp *BatchPacket) (buf *Buffer) {
 }
 
 func reSetStoreNodeNumber(num int32) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	if err = BroadcastReinit(&SysBean{STORENODENUM: num}).Error(); err == nil {
 		sys.STORENODENUM = int(num)
 	}
@@ -195,7 +193,7 @@ func reSetStoreNodeNumber(num int32) (err error) {
 }
 
 func broadRmNode() (err error) {
-	defer myRecovr()
+	defer errRecover()
 	err = BroadcastReinit(&SysBean{0, 0, sys.UUID}).Error()
 	return
 }
