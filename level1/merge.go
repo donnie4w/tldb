@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
@@ -24,7 +27,7 @@ var numlock = NewNumLock(1 << 6)
 type UUID int64
 
 func (this UUID) syncTxMerge(syncList map[int64]int8) (err error) {
-	defer myRecovr()
+	defer errRecover()
 	i := 10
 	for i > 0 {
 		i--
@@ -116,7 +119,7 @@ func (this *mergeSyncTx[T, V]) CallBack(cancelfunc func() bool, f func(bs map[in
 }
 
 func (this *mergeSyncTx[T, V]) getMergeBean() (_r V, err error) {
-	defer myRecovr()
+	defer errRecover()
 	size := 1 << 20
 	_r = make(map[int64]int8, 0)
 	start, end := this.cursor+1, this.cursor+1
