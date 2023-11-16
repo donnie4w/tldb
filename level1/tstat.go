@@ -2,7 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
-
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package level1
 
 import (
@@ -10,7 +12,6 @@ import (
 	"time"
 
 	. "github.com/donnie4w/tldb/container"
-	"github.com/donnie4w/tldb/log"
 	"github.com/donnie4w/tldb/sys"
 	"github.com/donnie4w/tldb/util"
 )
@@ -37,12 +38,12 @@ func (this *_statAdmin) addInject(id int64, f func()) {
 }
 
 func (this *_statAdmin) syncRunInject() {
-	defer myRecovr()
+	defer errRecover()
 	defer this.mux.Unlock()
 	this.mux.Lock()
 	this.injectMap.Range(func(_ int64, f func()) bool {
 		go func() {
-			defer myRecovr()
+			defer errRecover()
 			f()
 		}()
 		return true
@@ -136,7 +137,7 @@ func setStat(stat sys.STATTYPE, timenano time.Duration) {
 func fatalError(err error) {
 	defer statLock.Unlock()
 	statLock.Lock()
-	log.LoggerSys.Fatal("Fatal Error: set stat to PROXY,[", sys.UUID, "] Error:", err)
+	sys.FmtLog("Fatal Error: set stat to PROXY,[", sys.UUID, "] Error:", err)
 	sys.SetStat(sys.PROXY, 0)
 	go pos_stat(sys.PROXY, 0)
 }
