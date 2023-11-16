@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level2
 
@@ -46,7 +49,7 @@ func init() {
 	level1.DeleteBatch = Level2.DeleteBatch
 	level1.SelectByIdxAscLimit = Level2.SelectByIdxAscLimit
 	level1.SelectByIdxDescLimit = Level2.SelectByIdxDescLimit
-
+	level1.SelectIdByIdxSeq = Level2.SelectIdByIdxSeq
 	sys.Export = Level2.export
 	sys.CcGet = Level2.ccGet
 	sys.CcPut = Level2.ccPut
@@ -1143,6 +1146,45 @@ func (this *level2) SelectByIdxAscLimit(call int, table_name string, idx_name st
 	return
 }
 
+/*************************************************************************/
+func (this *level2) SelectIdByIdxSeq(call int, table_name, idx_name string, _idx_value []byte, seq int64) (_r int64, err error) {
+	defer myRecovr()
+	if table_name == "" || idx_name == "" || _idx_value == nil || seq <= 0 {
+		err = Errors(sys.ERR_NO_MATCH_PARAM)
+		return
+	}
+	defer this.gLock.Unlock()
+	if err = this.gLock.Lock(); err != nil {
+		return
+	}
+	isProxy, proxyuuid, hasRemoteRun := false, int64(0), len(level1.GetRemoteRunUUID()) > 0
+	if hasRemoteRun && !sys.IsRUN() {
+		isProxy = true
+	} else if proxyuuid = level1.LB(); proxyuuid > 0 && call == 0 {
+		isProxy = true
+	}
+	if isProxy {
+		if tp, exec := level1.BroadcastProxy(&TableParam{TableName: table_name, IdxName: idx_name, IdxValue: _idx_value, Seq: seq}, proxyuuid, 22, 1); tp != nil && exec.Error() == nil {
+			if tp.Err != "" {
+				err = errors.New(tp.Err)
+			} else {
+				_r = tp.Seq
+			}
+		} else {
+			err = Errors(sys.ERR_PROXY)
+		}
+	} else if sys.IsRUN() {
+		var bs []byte
+		if bs, err = level1.Level1.GetLocal(KeyLevel2.IndexKey(table_name, idx_name, idxValue(_idx_value), seq)); err == nil {
+			_r = BytesToInt64(bs)
+		}
+	} else {
+		err = Errors(sys.ERR_NO_RUNSTAT)
+	}
+	return
+}
+
+/*****************************************************************************************/
 func (this *level2) ccPut() int64 {
 	return this.pLock.Cc()
 }
