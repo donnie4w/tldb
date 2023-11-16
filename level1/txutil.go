@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package level1
 
@@ -34,7 +37,7 @@ var logger = Logger
 var logError = LoggerError
 
 // ///////////////////////////////
-func myRecovr() {
+func errRecover() {
 	if err := recover(); err != nil {
 		logger.Error(string(debug.Stack()))
 	}
