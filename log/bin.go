@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package log
 
@@ -108,7 +111,7 @@ func (this *_binLog) WriteBytes(buf *Buffer, t int64) (err error) {
 	bs := buf.Bytes()
 	if bs != nil && len(bs) > 0 {
 		bakfn := ""
-		if err, bakfn = LogBIN.Write(bs); err == nil && bakfn != "" {
+		if err, bakfn = Binlog.Write(bs); err == nil && bakfn != "" {
 			if fileNum, err := strconv.Atoi(bakfn[len(this.prename)+1 : len(bakfn)-len(this.sufname)-1]); err == nil {
 				LogStat.saveLogStat(int32(fileNum), t)
 			}
