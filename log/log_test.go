@@ -1,5 +1,10 @@
 // Copyright (c) , donnie <donnie4w@gmail.com>
 // All rights reserved.
+//
+// github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package log
 
@@ -15,7 +20,7 @@ func TestLog(t *testing.T) {
 	sys.DBFILEDIR = "_dataTest"
 	BinLog = NewBinLog()
 	var err error
-	if LogBIN, err = logging.NewLogger().SetRollingFile(sys.DBFILEDIR, sys.BINLOGNAME, 2, logging.MB); err != nil {
+	if Binlog, err = logging.NewLogger().SetRollingFile(sys.DBFILEDIR, sys.BINLOGNAME, 2, logging.MB); err != nil {
 		panic("bin log init failed:" + err.Error())
 	}
 	if LogStat, err = NewStatLog(sys.DBFILEDIR, sys.STATLOGNAME); err != nil {
