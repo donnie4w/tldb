@@ -5,8 +5,6 @@
 
 package stub
 
-import "sync"
-
 type Merge[T any, V any] interface {
 	Add(t T)
 	Del(id int64)
@@ -29,7 +27,7 @@ type RemoteNode struct {
 }
 
 type Server interface {
-	Serve(wg *sync.WaitGroup) (err error)
+	Serve() (err error)
 	Close() (err error)
 }
 
