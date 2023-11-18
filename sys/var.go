@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package sys
 
@@ -12,16 +15,20 @@ import (
 	"runtime"
 	"runtime/debug"
 	"time"
+
+	. "github.com/donnie4w/gofer/util"
 )
 
 func init() {
 	Flag()
 }
 
-const VERSION = "0.0.2" //program version
+const VERSION = "0.0.3" //program version
 
-const GB = 1 << 30
-const MB = 1 << 20
+const (
+	GB = 1 << 30
+	MB = 1 << 20
+)
 
 var NAMESPACE string              //db namespace
 var STARTTIME = time.Now()        //Node startup time (Local time)
@@ -48,22 +55,18 @@ var DATAZLIB bool
 var MERGETIME int64
 var MEMLIMIT int64
 var GOGC int
-
-// /////////////////////////////////////////////
-var FREELOCKTIME int64                     //maximum retention time of an idle lock
-var STATSEQ int64                          // stat seq
-var MAXDELSEQ int64                        // max del seq
-var MAXDELSEQCURSOR int64                  // max del seq cursor
-var STORENODENUM = 1                       //number of storage data nodes in the cluster
-var CLUSTER_NUM_FINAL bool                 //fixed number of nodes ,minimum number of nodes in a cluster
-var CLUSTER_NUM int                        //minimum number of nodes in a cluster
-var TIME_DEVIATION int64                   //time deviation
-var TIME_DEVIATION_LIST = make([]int64, 0) //
+var FREELOCKTIME int64     //maximum retention time of an idle lock
+var STATSEQ int64          // stat seq
+var MAXDELSEQ int64        // max del seq
+var MAXDELSEQCURSOR int64  // max del seq cursor
+var STORENODENUM = 1       //number of storage data nodes in the cluster
+var CLUSTER_NUM_FINAL bool //fixed number of nodes ,minimum number of nodes in a cluster
+var CLUSTER_NUM int        //minimum number of nodes in a cluster
+var TIME_DEVIATION int64   //time deviation
+var TIME_DEVIATION_LIST = make([]int64, 0)
 var PWD string
 var PRIVATEKEY string
 var PUBLICKEY string
-
-// /////////////////////////////////////////////
 var WSORIGIN string     //mq websocket origin
 var CLIADDR string      //client服务地址
 var MQADDR string       //mq服务地址
@@ -78,6 +81,9 @@ var MQCRT string        //mq crt文件地址
 var MQKEY string        //mq  key文件地址
 var ADMINCRT string     //admin crt文件地址
 var ADMINKEY string     //admin key文件地址
+var TLDBJSON string
+var Conf *ConfBean
+var defaultConf string
 
 // ////////////////////////////////////////////
 var WaitTimeout = 30 * time.Second
@@ -99,7 +105,6 @@ var INIT bool
 
 // ////////////////////////////////////////////
 func Flag() {
-
 	flag.StringVar(&PWD, "pwd", "gotldb2023", "password of cluster service node")
 	flag.StringVar(&PUBLICKEY, "publickey", "", "file of RSA PUBLIC KEY")
 	flag.StringVar(&PRIVATEKEY, "privatekey", "", "file of RSA PRIVATE KEY")
@@ -127,10 +132,10 @@ func Flag() {
 	flag.Int64Var(&FREELOCKTIME, "freelock", 1<<16, "maximum retention time of an idle lock")
 
 	flag.BoolVar(&CLUSTER_NUM_FINAL, "clus_final", false, "if true,'clus' cannot be assigned automatically")
-	flag.IntVar(&CLUSTER_NUM, "clus", 3, "minimum number of cluster nodes")
+	flag.IntVar(&CLUSTER_NUM, "clus", 0, "minimum number of cluster nodes")
 	flag.IntVar(&STORENODENUM, "store", 0, "number of store data node,If the value is 0, all nodes store data")
-	flag.Int64Var(&MEMLIMIT, "memlimit", 1280, "memory limit(unit:MB)")
-	flag.IntVar(&GOGC, "gogc", -1, "a collection is triggered when the ratio of freshly allocated data")
+	flag.Int64Var(&MEMLIMIT, "memlimit", 1580, "memory limit(unit:MB)")
+	flag.IntVar(&GOGC, "gc", -1, "a collection is triggered when the ratio of freshly allocated data")
 
 	flag.BoolVar(&CLITLS, "clitls", false, "use the TLS secure transport protocol for client")
 	flag.BoolVar(&ADMINTLS, "admintls", false, "use the TLS secure transport protocol for web admin")
@@ -148,6 +153,7 @@ func Flag() {
 	flag.StringVar(&MQADDR, "mq", "", "mq address")
 	flag.StringVar(&ADDR, "cs", "", "cluster service address")
 	flag.StringVar(&WEBADMINADDR, "admin", ":4001", "web admin platform address")
+	flag.StringVar(&TLDBJSON, "c", "tldb.json", "config file of tldb")
 
 	flag.BoolVar(&CMD, "cmd", false, "command line interaction mode")
 	flag.BoolVar(&INIT, "init", false, "init and create default account")
@@ -161,14 +167,127 @@ func Flag() {
 	SocketTimeout = SocketTimeout * time.Second
 	ReadTimeout = ReadTimeout * time.Second
 	DBBUFFER = DBBUFFER * MB
+	parsec()
 	if ZLV > 9 {
 		ZLV = 9
 	} else if ZLV < 0 {
 		ZLV = -1
 	}
-
+	if Conf.PWD != nil {
+		PWD = *Conf.PWD
+	}
+	if Conf.PUBLICKEY != nil && Conf.PRIVATEKEY != nil {
+		PUBLICKEY = *Conf.PUBLICKEY
+		PRIVATEKEY = *Conf.PRIVATEKEY
+	}
+	if Conf.NAMESPACE != nil {
+		NAMESPACE = *Conf.NAMESPACE
+	}
+	if Conf.DBFILEDIR != nil {
+		DBFILEDIR = *Conf.DBFILEDIR
+	}
+	if Conf.ROOTPATHLOG != nil {
+		ROOTPATHLOG = *Conf.ROOTPATHLOG
+	}
+	if Conf.BINLOGSIZE > 0 {
+		BINLOGSIZE = Conf.BINLOGSIZE
+	}
+	if Conf.CLUSTER_NUM_FINAL {
+		CLUSTER_NUM_FINAL = Conf.CLUSTER_NUM_FINAL
+	}
+	if Conf.CLUSTER_NUM > 0 {
+		CLUSTER_NUM = Conf.CLUSTER_NUM
+	}
+	if Conf.STORENODENUM > 0 {
+		STORENODENUM = Conf.STORENODENUM
+	}
+	if Conf.MEMLIMIT > 0 {
+		MEMLIMIT = Conf.MEMLIMIT
+	}
+	if Conf.CLITLS {
+		CLITLS = Conf.CLITLS
+	}
+	if Conf.GOGC != nil {
+		GOGC = *Conf.GOGC
+	}
+	if Conf.ADMINTLS {
+		ADMINTLS = Conf.ADMINTLS
+	}
+	if Conf.MQTLS {
+		MQTLS = Conf.MQTLS
+	}
+	if Conf.WSORIGIN != nil {
+		WSORIGIN = *Conf.WSORIGIN
+	}
+	if Conf.CLICRT != nil {
+		CLICRT = *Conf.CLICRT
+	}
+	if Conf.CLIKEY != nil {
+		CLIKEY = *Conf.CLIKEY
+	}
+	if Conf.MQCRT != nil {
+		MQCRT = *Conf.MQCRT
+	}
+	if Conf.MQKEY != nil {
+		MQKEY = *Conf.MQKEY
+	}
+	if Conf.ADMINCRT != nil {
+		ADMINCRT = *Conf.ADMINCRT
+	}
+	if Conf.CLIADDR != nil {
+		CLIADDR = *Conf.CLIADDR
+	}
+	if Conf.MQADDR != nil {
+		MQADDR = *Conf.MQADDR
+	}
+	if Conf.ADDR != nil {
+		ADDR = *Conf.ADDR
+	}
+	if Conf.WEBADMINADDR != nil {
+		WEBADMINADDR = *Conf.WEBADMINADDR
+	}
 	debug.SetMemoryLimit(MEMLIMIT * MB)
 	debug.SetGCPercent(GOGC)
+}
+
+type ConfBean struct {
+	PWD               *string `json:"pwd"`
+	PUBLICKEY         *string `json:"publickey"`
+	PRIVATEKEY        *string `json:"privatekey"`
+	NAMESPACE         *string `json:"namespace"`
+	DBFILEDIR         *string `json:"dir"`
+	ROOTPATHLOG       *string `json:"logdir"`
+	BINLOGSIZE        int64   `json:"binsize"`
+	CLUSTER_NUM_FINAL bool    `json:"clus_final"`
+	CLUSTER_NUM       int     `json:"clus"`
+	GOGC              *int    `json:"gc"`
+	STORENODENUM      int     `json:"store"`
+	MEMLIMIT          int64   `json:"memlimit"`
+	CLITLS            bool    `json:"clitls"`
+	ADMINTLS          bool    `json:"admintls"`
+	MQTLS             bool    `json:"mqtls"`
+	WSORIGIN          *string `json:"origin"`
+	CLICRT            *string `json:"clicrt"`
+	CLIKEY            *string `json:"clikey"`
+	MQCRT             *string `json:"mqcrt"`
+	MQKEY             *string `json:"mqkey"`
+	ADMINCRT          *string `json:"admincrt"`
+	CLIADDR           *string `json:"cli"`
+	MQADDR            *string `json:"mq"`
+	ADDR              *string `json:"cs"`
+	WEBADMINADDR      *string `json:"admin"`
+}
+
+func parsec() {
+	if defaultConf != "" {
+		Conf, _ = JsonDecode[*ConfBean]([]byte(defaultConf))
+	} else if bs, err := ReadFile(TLDBJSON); err == nil {
+		Conf, _ = JsonDecode[*ConfBean](bs)
+	}
+	if Conf == nil {
+		FmtLog("empty config")
+		Conf = &ConfBean{}
+	}
 }
 
 func usage() {
@@ -176,7 +295,7 @@ func usage() {
 	if runtime.GOOS == "windows" {
 		exename = "tldb.exe"
 	}
-	fmt.Fprintln(os.Stderr, `tldb version: tldb/0.0.1
+	fmt.Fprintln(os.Stderr, `tldb version: `+VERSION+`
 Server Mode  Usage: `+exename+` [-dir data path] [-cs cluster service addr] [-cli client service addr] [-admin admin addr] [-mq mq service addr]
 Command Mode Usage: `+exename+` [-dir data path] [-cmd]`)
 }
