@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package tc
 
@@ -10,10 +13,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	. "github.com/donnie4w/tldb/container"
@@ -36,7 +39,7 @@ type adminService struct {
 
 var adminservice = &adminService{false, tlnet.NewTlnet()}
 
-func (this *adminService) Serve(wg *sync.WaitGroup) (err error) {
+func (this *adminService) Serve() (err error) {
 	if strings.TrimSpace(sys.DEBUGADDR) != "" {
 		go tlDebug()
 		<-time.After(500 * time.Millisecond)
@@ -45,10 +48,8 @@ func (this *adminService) Serve(wg *sync.WaitGroup) (err error) {
 		initAccount()
 	}
 	if strings.TrimSpace(sys.WEBADMINADDR) != "" {
-		err = this._serve(wg, strings.TrimSpace(sys.WEBADMINADDR), sys.ADMINTLS, sys.ADMINCRT, sys.ADMINKEY)
-	} else {
-		wg.Done()
-	}
+		err = this._serve(strings.TrimSpace(sys.WEBADMINADDR), sys.ADMINTLS, sys.ADMINCRT, sys.ADMINKEY)
+	} 
 	return
 }
 
@@ -61,8 +62,7 @@ func (this *adminService) Close() (err error) {
 	return
 }
 
-func (this *adminService) _serve(wg *sync.WaitGroup, addr string, TLS bool, serverCrt, serverKey string) (err error) {
-	defer wg.Done()
+func (this *adminService) _serve(addr string, TLS bool, serverCrt, serverKey string) (err error) {
 	sys.WEBADMINADDR = addr
 	StoreAdmin.PutOther("admin", sys.WEBADMINADDR)
 	StoreAdmin.PutOther("admintauth", fmt.Sprint(uint(util.NewTxId())))
@@ -95,27 +95,27 @@ func (this *adminService) _serve(wg *sync.WaitGroup, addr string, TLS bool, serv
 	if TLS {
 		StoreAdmin.PutOther("admintls", "1")
 		if util.IsFileExist(serverCrt) && util.IsFileExist(serverKey) {
-			log.LoggerSys.Info(sys.SysLog(fmt.Sprint("webAdmin start tls [", addr, "]")))
+			sys.FmtLog(fmt.Sprint("webAdmin start tls [", addr, "]"))
 			if err = this.tlAdmin.HttpStartTLS(addr, serverCrt, serverKey); err != nil {
 				err = errors.New("webAdmin start tls failed:" + err.Error())
 			}
 		} else {
-			log.LoggerSys.Info(sys.SysLog(fmt.Sprint("webAdmin start tls by bytes [", addr, "]")))
+			sys.FmtLog(fmt.Sprint("webAdmin start tls by bytes [", addr, "]"))
 			if err = this.tlAdmin.HttpStartTlsBytes(addr, []byte(ServerCrt), []byte(ServerKey)); err != nil {
 				err = errors.New("webAdmin start tls by bytes failed:" + err.Error())
 			}
 		}
 	}
 	if !this.isClose {
-		log.LoggerSys.Info(sys.SysLog(fmt.Sprint("webAdmin start [", addr, "]")))
+		sys.FmtLog(fmt.Sprint("webAdmin start [", addr, "]"))
 		StoreAdmin.PutOther("admintls", "0")
 		if err = this.tlAdmin.HttpStart(addr); err != nil {
 			err = errors.New("webAdmin start failed:" + err.Error())
 		}
 	}
 	if !this.isClose && err != nil {
-		log.LoggerSys.Error(err.Error())
-		panic("webAdmin start failed:" + err.Error())
+		sys.FmtLog(err.Error())
+		os.Exit(0)
 	}
 	return
 }
@@ -193,7 +193,6 @@ func getLang(hc *tlnet.HttpContext) LANG {
 	}
 	return ZH
 }
-
 
 func cssHandler(hc *tlnet.HttpContext) {
 	hc.Writer().Header().Add("Content-Type", "text/html")
