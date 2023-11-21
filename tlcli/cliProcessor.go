@@ -2,6 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 
 package tlcli
 
@@ -29,7 +32,7 @@ func ctx2CliContext(ctx context.Context) *cliContext {
 // Parameters:
 //   - I
 func (this *processor) Ping(ctx context.Context, i int64) (_r *Ack, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	mux := ctx2CliContext(ctx).mux
 	defer mux.Unlock()
 	mux.Lock()
@@ -40,7 +43,7 @@ func (this *processor) Ping(ctx context.Context, i int64) (_r *Ack, _err error) 
 // Parameters:
 //   - S
 func (this *processor) Auth(ctx context.Context, s string) (_r *Ack, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	mux := ctx2CliContext(ctx).mux
 	defer mux.Unlock()
 	mux.Lock()
@@ -56,7 +59,7 @@ func (this *processor) Auth(ctx context.Context, s string) (_r *Ack, _err error)
 // Parameters:
 //   - Tb
 func (this *processor) Create(ctx context.Context, tb *TableBean) (_r *Ack, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -79,7 +82,7 @@ func (this *processor) Create(ctx context.Context, tb *TableBean) (_r *Ack, _err
 // Parameters:
 //   - Tb
 func (this *processor) Alter(ctx context.Context, tb *TableBean) (_r *Ack, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -102,7 +105,7 @@ func (this *processor) Alter(ctx context.Context, tb *TableBean) (_r *Ack, _err 
 // Parameters:
 //   - Name
 func (this *processor) Drop(ctx context.Context, name string) (_r *Ack, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -125,7 +128,7 @@ func (this *processor) Drop(ctx context.Context, name string) (_r *Ack, _err err
 // Parameters:
 //   - Name
 func (this *processor) SelectId(ctx context.Context, name string) (_r int64, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -140,7 +143,7 @@ func (this *processor) SelectId(ctx context.Context, name string) (_r int64, _er
 // Parameters:
 //   - Name
 func (this *processor) SelectIdByIdx(ctx context.Context, name string, column string, value []byte) (_r int64, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -156,7 +159,7 @@ func (this *processor) SelectIdByIdx(ctx context.Context, name string, column st
 //   - Name
 //   - ID
 func (this *processor) SelectById(ctx context.Context, name string, id int64) (_r *DataBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -176,7 +179,7 @@ func (this *processor) SelectById(ctx context.Context, name string, id int64) (_
 //   - Column
 //   - Value
 func (this *processor) SelectByIdx(ctx context.Context, name string, column string, value []byte) (_r *DataBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -196,7 +199,7 @@ func (this *processor) SelectByIdx(ctx context.Context, name string, column stri
 //   - Column
 //   - Value
 func (this *processor) SelectsByIdLimit(ctx context.Context, name string, startId int64, limit int64) (_r []*DataBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -220,7 +223,7 @@ func (this *processor) SelectsByIdLimit(ctx context.Context, name string, startI
 //   - Column
 //   - Value
 func (this *processor) SelectAllByIdx(ctx context.Context, name string, column string, value []byte) (_r []*DataBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -246,7 +249,7 @@ func (this *processor) SelectAllByIdx(ctx context.Context, name string, column s
 //   - StartId
 //   - Limit
 func (this *processor) SelectByIdxLimit(ctx context.Context, name string, column string, value [][]byte, startId int64, limit int64) (_r []*DataBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -268,7 +271,7 @@ func (this *processor) SelectByIdxLimit(ctx context.Context, name string, column
 // Parameters:
 //   - Tb
 func (this *processor) Update(ctx context.Context, tb *TableBean) (_r *AckBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -291,7 +294,7 @@ func (this *processor) Update(ctx context.Context, tb *TableBean) (_r *AckBean, 
 // Parameters:
 //   - Tb
 func (this *processor) Delete(ctx context.Context, tb *TableBean) (_r *AckBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -314,7 +317,7 @@ func (this *processor) Delete(ctx context.Context, tb *TableBean) (_r *AckBean, 
 // Parameters:
 //   - Tb
 func (this *processor) Insert(ctx context.Context, tb *TableBean) (_r *AckBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -345,7 +348,7 @@ func (this *processor) Insert(ctx context.Context, tb *TableBean) (_r *AckBean, 
 // Parameters:
 //   - Name
 func (this *processor) ShowTable(ctx context.Context, name string) (_r *TableBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -365,7 +368,7 @@ func (this *processor) ShowTable(ctx context.Context, name string) (_r *TableBea
 }
 
 func (this *processor) ShowAllTables(ctx context.Context) (_r []*TableBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -391,7 +394,7 @@ func (this *processor) ShowAllTables(ctx context.Context) (_r []*TableBean, _err
 //   - Name
 //   - Ids
 func (this *processor) DeleteBatch(ctx context.Context, name string, ids []int64) (_r *AckBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -417,7 +420,7 @@ func (this *processor) DeleteBatch(ctx context.Context, name string, ids []int64
 //   - StartId
 //   - Limit
 func (this *processor) SelectByIdxDescLimit(ctx context.Context, name string, column string, value []byte, startId int64, limit int64) (_r []*DataBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -443,7 +446,7 @@ func (this *processor) SelectByIdxDescLimit(ctx context.Context, name string, co
 //   - StartId
 //   - Limit
 func (this *processor) SelectByIdxAscLimit(ctx context.Context, name string, column string, value []byte, startId int64, limit int64) (_r []*DataBean, _err error) {
-	defer myRecovr()
+	defer myRecover()
 	cc := ctx2CliContext(ctx)
 	defer cc.mux.Unlock()
 	cc.mux.Lock()
@@ -462,9 +465,27 @@ func (this *processor) SelectByIdxAscLimit(ctx context.Context, name string, col
 	return
 }
 
+// Parameters:
+//   - Name
+//   - Column
+//   - Value
+//   - Seq
+func (this *processor) SelectIdByIdxSeq(ctx context.Context, name string, column string, value []byte, seq int64) (_r int64, _err error) {
+	defer myRecover()
+	cc := ctx2CliContext(ctx)
+	defer cc.mux.Unlock()
+	cc.mux.Lock()
+	if noAuthAndClose(cc) {
+		_err = util.Errors(sys.ERR_AUTH_NOPASS)
+		return
+	}
+	_r, _err = Level2.SelectIdByIdxSeq(0, name, column, value, seq)
+	return
+}
+
 /******************************************************************/
 func Auth(s string) (_ok bool) {
-	defer myRecovr()
+	defer myRecover()
 	if ss := strings.Split(s, "="); len(ss) == 2 {
 		if _r, ok := keystore.StoreAdmin.GetClient(ss[0]); ok {
 			if _r.Pwd == util.MD5(ss[1]) {
