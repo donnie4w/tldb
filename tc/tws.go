@@ -1,8 +1,10 @@
-/**
- * Copyright 2023 tldb Author. All Rights Reserved.
- * email: donnie4w@gmail.com
- * github.com/donnie4w/tldb
- */
+// Copyright (c) , donnie <donnie4w@gmail.com>
+// All rights reserved.
+//
+// github.com/donnie4w/tldb
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package tc
 
 import (
@@ -10,8 +12,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
-	"sync"
 	"time"
 
 	. "github.com/donnie4w/gofer/buffer"
@@ -41,12 +43,10 @@ type mqService struct {
 
 var mqservice = &mqService{false, tlnet.NewTlnet()}
 
-func (this *mqService) Serve(wg *sync.WaitGroup) (err error) {
+func (this *mqService) Serve() (err error) {
 	if strings.TrimSpace(sys.MQADDR) != "" {
-		err = this._serve(wg, strings.TrimSpace(sys.MQADDR), sys.MQTLS, sys.MQCRT, sys.MQKEY)
-	} else {
-		wg.Done()
-	}
+		err = this._serve(strings.TrimSpace(sys.MQADDR), sys.MQTLS, sys.MQCRT, sys.MQKEY)
+	} 
 	return
 }
 
@@ -59,33 +59,32 @@ func (this *mqService) Close() (err error) {
 	return
 }
 
-func (this *mqService) _serve(wg *sync.WaitGroup, addr string, TLS bool, serverCrt, serverKey string) (err error) {
-	defer wg.Done()
+func (this *mqService) _serve( addr string, TLS bool, serverCrt, serverKey string) (err error) {
 	sys.MQADDR = addr
 	this.tlnetMq.Handle("/mq2", mq2handler)
 	this.tlnetMq.HandleWebSocketBindConfig("/mq", mqHandler, mqConfig())
 	if TLS {
-		log.LoggerSys.Info(sys.SysLog(fmt.Sprint("tlMq start tls[", sys.MQADDR, "/mq]")))
+		sys.FmtLog(fmt.Sprint("Tldb Mq start tls[", sys.MQADDR, "/mq]"))
 		if util.IsFileExist(serverCrt) && util.IsFileExist(serverKey) {
 			if err = this.tlnetMq.HttpStartTLS(addr, serverCrt, serverKey); err != nil {
-				err = errors.New("tlMq tls start failed:" + err.Error())
+				err = errors.New("Tldb Mq tls start failed:" + err.Error())
 			}
 		} else {
 			if err = this.tlnetMq.HttpStartTlsBytes(addr, []byte(keystore.ServerCrt), []byte(keystore.ServerKey)); err != nil {
-				err = errors.New("tlMq tls by bytes start failed:" + err.Error())
+				err = errors.New("Tldb Mq tls by bytes start failed:" + err.Error())
 			}
 		}
 	}
 	if !this.isClose {
-		log.LoggerSys.Info(sys.SysLog(fmt.Sprint("tlMq start[", sys.MQADDR, "/mq]")))
+		sys.FmtLog(fmt.Sprint("Tldb Mq start[", sys.MQADDR, "/mq]"))
 		if err = this.tlnetMq.HttpStart(addr); err != nil {
-			err = errors.New("tlMq start failed:" + err.Error())
+			err = errors.New("Tldb Mq service init failed:" + err.Error())
 		}
 	}
 
 	if !this.isClose && err != nil {
-		log.LoggerSys.Error(err.Error())
-		panic("tlMq start failed:" + err.Error())
+		sys.FmtLog(err.Error())
+		os.Exit(0)
 	}
 	return
 }
@@ -211,7 +210,6 @@ func mqHandler(hc *tlnet.HttpContext) {
 				tempOverMap.Del(hc.WS)
 			} else {
 				sendErr(bs[1:9], hc.WS)
-				logger.Error("no auth>>", hc.WS.Id)
 				hc.WS.Close()
 				return
 			}
