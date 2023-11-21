@@ -2,7 +2,9 @@
 // All rights reserved.
 //
 // github.com/donnie4w/tldb
-
+//
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file
 package tlcli
 
 import (
@@ -10,6 +12,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"os"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -40,8 +43,7 @@ type cliService struct {
 	connNum int32
 }
 
-func (this *cliService) _server(wg *sync.WaitGroup, _addr string, processor thrift.TProcessor, TLS bool, serverCrt, serverKey string) (err error) {
-	defer wg.Done()
+func (this *cliService) _server(_addr string, processor thrift.TProcessor, TLS bool, serverCrt, serverKey string) (err error) {
 	var serverTransport thrift.TServerTransport
 	if TLS {
 		cfg := &tls.Config{}
@@ -61,17 +63,17 @@ func (this *cliService) _server(wg *sync.WaitGroup, _addr string, processor thri
 	if err == nil && serverTransport != nil {
 		server := thrift.NewTSimpleServer4(processor, serverTransport, nil, nil)
 		if err = server.Listen(); err == nil {
-			s := fmt.Sprint("tlClient start[", _addr, "]")
+			s := fmt.Sprint("Tldb Client service start[", _addr, "]")
 			if TLS {
-				s = fmt.Sprint("tlClient start tls[", _addr, "]")
+				s = fmt.Sprint("Tldb Client service start tls[", _addr, "]")
 			}
-			log.LoggerSys.Info(sys.SysLog(s))
+			sys.FmtLog(s)
 			for {
 				if _transport, err := server.ServerTransport().Accept(); err == nil {
 					atomic.AddInt32(&this.connNum, 1)
 					go func() {
 						defer func() { atomic.AddInt32(&this.connNum, -1) }()
-						defer myRecovr()
+						defer myRecover()
 						cc := newCliContext(_transport)
 						defer cc.close()
 						defaultCtx := context.WithValue(context.Background(), "CliContext", cc)
@@ -96,8 +98,8 @@ func (this *cliService) _server(wg *sync.WaitGroup, _addr string, processor thri
 		}
 	}
 	if !this.isClose && err != nil {
-		log.LoggerSys.Error("tlClient start failed:", err)
-		panic("tlClient start failed:" + err.Error())
+		sys.FmtLog("Tldb Client service init failed:", err)
+		os.Exit(0)
 	}
 	return
 }
@@ -111,12 +113,10 @@ func (this *cliService) Close() (err error) {
 	return
 }
 
-func (this *cliService) Serve(wg *sync.WaitGroup) (err error) {
+func (this *cliService) Serve() (err error) {
 	if strings.TrimSpace(sys.CLIADDR) != "" {
-		err = this._server(wg, strings.TrimSpace(sys.CLIADDR), NewIcliProcessor(cliProcessor), sys.CLITLS, sys.CLICRT, sys.CLIKEY)
-	} else {
-		wg.Done()
-	}
+		err = this._server(strings.TrimSpace(sys.CLIADDR), NewIcliProcessor(cliProcessor), sys.CLITLS, sys.CLICRT, sys.CLIKEY)
+	} 
 	return
 }
 
@@ -134,7 +134,7 @@ func newCliContext(tt thrift.TTransport) (cc *cliContext) {
 }
 
 func (this *cliContext) close() {
-	defer myRecovr()
+	defer myRecover()
 	defer this.mux.Unlock()
 	this.mux.Lock()
 	if !this._isClose {
@@ -143,7 +143,7 @@ func (this *cliContext) close() {
 	}
 }
 
-func myRecovr() {
+func myRecover() {
 	if err := recover(); err != nil {
 		logger.Error(string(debug.Stack()))
 	}
