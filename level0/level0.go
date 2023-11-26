@@ -48,6 +48,9 @@ func (this *level0) Serve() (err error) {
 	keystore.Init()
 	sys.BlankLine()
 	sys.FmtLog("UUID:", sys.UUID)
+	if sys.IsStandAlone() {
+		sys.FmtLog("StandAlone")
+	}
 	return
 }
 
@@ -90,7 +93,7 @@ func (this *level0) GetKeysPrefixLimit(pre string, limit int) (bys []string, err
 
 func (this *level0) Close() (err error) {
 	err = this._db.Close()
-	sys.FmtLog("close node:", sys.UUID)
+	sys.FmtLog("stop service:", sys.UUID)
 	return
 }
 
