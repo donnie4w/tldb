@@ -34,7 +34,7 @@ var ERR_INCR_SEQ ErrCodeType = 503
 // node not find
 var ERR_NODE_NOFOUND ErrCodeType = 504
 
-// 集群节点不匹配
+// the cluster nodes do not match
 var ERR_CLUS_NOMATCH ErrCodeType = 505
 
 // over time
