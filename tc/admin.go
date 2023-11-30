@@ -1,11 +1,9 @@
-// Copyright (c) , donnie <donnie4w@gmail.com>
+// Copyright (c) 2023, donnie <donnie4w@gmail.com>
 // All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 //
 // github.com/donnie4w/tldb
-//
-// Use of this source code is governed by a MIT-style license that can be
-// found in the LICENSE file
-
 package tc
 
 import (
@@ -49,7 +47,9 @@ func (this *adminService) Serve() (err error) {
 	}
 	if strings.TrimSpace(sys.WEBADMINADDR) != "" {
 		err = this._serve(strings.TrimSpace(sys.WEBADMINADDR), sys.ADMINTLS, sys.ADMINCRT, sys.ADMINKEY)
-	} 
+	} else{
+		sys.FmtLog("no webAdmin service")
+	}
 	return
 }
 
