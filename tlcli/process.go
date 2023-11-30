@@ -1,10 +1,9 @@
-// Copyright (c) , donnie <donnie4w@gmail.com>
+// Copyright (c) 2023, donnie <donnie4w@gmail.com>
 // All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 //
 // github.com/donnie4w/tldb
-//
-// Use of this source code is governed by a MIT-style license that can be
-// found in the LICENSE file
 package tlcli
 
 import (
@@ -13,14 +12,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
 
 	"github.com/donnie4w/gothrift/thrift"
-
-	// thrift "github.com/apache/thrift/lib/go/thrift"
 	"github.com/donnie4w/tldb/keystore"
 	"github.com/donnie4w/tldb/log"
 	"github.com/donnie4w/tldb/sys"
@@ -116,7 +112,9 @@ func (this *cliService) Close() (err error) {
 func (this *cliService) Serve() (err error) {
 	if strings.TrimSpace(sys.CLIADDR) != "" {
 		err = this._server(strings.TrimSpace(sys.CLIADDR), NewIcliProcessor(cliProcessor), sys.CLITLS, sys.CLICRT, sys.CLIKEY)
-	} 
+	} else {
+		sys.FmtLog("no client service")
+	}
 	return
 }
 
@@ -145,6 +143,6 @@ func (this *cliContext) close() {
 
 func myRecover() {
 	if err := recover(); err != nil {
-		logger.Error(string(debug.Stack()))
+		logger.Error(err)
 	}
 }
