@@ -6,8 +6,6 @@
 // github.com/donnie4w/tldb
 package key
 
-import "fmt"
-
 const (
 	TRANS_KEY = "1_0_"
 	TRANS_DEL = "1_1_"
@@ -54,5 +52,5 @@ func (this *keyLevel1) StatSeq() string {
 }
 
 func (this *keyLevel1) StatKey(seq int64) string {
-	return concat(STAT_KEY, "id_", fmt.Sprint(seq))
+	return concat(STAT_KEY, "id_", itoa(seq))
 }
