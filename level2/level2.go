@@ -11,8 +11,8 @@ package level2
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -282,6 +282,13 @@ func (this *level2) SelectIdByIdx(call int, table_name, idx_name string, _idx_va
 		var bs []byte
 		if bs, err = level1.Level1.GetLocal(KeyLevel2.MaxSeqForIdx(table_name, idx_name, idxValue(_idx_value))); err == nil {
 			_r = BytesToInt64(bs)
+			for _r > 0 {
+				if b := level1.Level1.Has(KeyLevel2.IndexKey(table_name, idx_name, idxValue(_idx_value), _r)); b {
+					break
+				}
+				_r--
+			}
+
 		}
 	} else {
 		err = Errors(sys.ERR_NO_RUNSTAT)
@@ -636,7 +643,7 @@ func (this *level2) Update(call int, ts *TableStub) (err error) {
 							is.IdxMap[idx_name] = new_idx_key
 							reset = true
 						}
-						idxDelMap[KeyLevel3.SeqForDel(fmt.Sprint(atomic.AddInt64(&sys.MAXDELSEQ, 1)))] = []byte(_idx_key)
+						idxDelMap[KeyLevel3.SeqForDel(itoa(atomic.AddInt64(&sys.MAXDELSEQ, 1)))] = []byte(_idx_key)
 						idxDelMap[KeyLevel3.KeyMaxDelSeq()] = Int64ToBytes(*&sys.MAXDELSEQ)
 					}
 				} else {
@@ -707,7 +714,7 @@ func (this *level2) _delete(tablename string, id int64, idxDelMap map[string][]b
 			is := decode2IdxStub(bs)
 			for _, _idx_key := range is.IdxMap {
 				dels = append(dels, _idx_key)
-				idxDelMap[KeyLevel3.SeqForDel(fmt.Sprint(atomic.AddInt64(&sys.MAXDELSEQ, 1)))] = []byte(_idx_key)
+				idxDelMap[KeyLevel3.SeqForDel(itoa(atomic.AddInt64(&sys.MAXDELSEQ, 1)))] = []byte(_idx_key)
 				idxDelMap[KeyLevel3.KeyMaxDelSeq()] = Int64ToBytes(*&sys.MAXDELSEQ)
 			}
 			dels = append(dels, _pte_key)
@@ -1235,7 +1242,7 @@ func idxValue(bs []byte) (_r string) {
 	if len(bs) < 20 {
 		_r = string(bs)
 	} else {
-		_r = fmt.Sprint(CRC64(bs))
+		_r = uitoa(CRC64(bs))
 	}
 	return
 }
@@ -1299,4 +1306,12 @@ func checkStat(db *TableStub) (err error) {
 		err = Errors(sys.ERR_NO_MATCH_PARAM)
 	}
 	return
+}
+
+func itoa(i int64) string {
+	return strconv.FormatInt(i, 10)
+}
+
+func uitoa(i uint64) string {
+	return strconv.FormatUint(i, 10)
 }
