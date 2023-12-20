@@ -7,7 +7,6 @@
 package key
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -31,7 +30,7 @@ func (this *keyLevel2) SeqName(tablename string) string {
 }
 
 func (this *keyLevel2) SeqKey(tablename string, _seq int64) string {
-	return concat(this.SeqName(tablename), fmt.Sprint(_seq))
+	return concat(this.SeqName(tablename), itoa(_seq))
 }
 
 func (this *keyLevel2) IndexName(tablename, idx_name, idx_value string) string {
@@ -39,7 +38,7 @@ func (this *keyLevel2) IndexName(tablename, idx_name, idx_value string) string {
 }
 
 func (this *keyLevel2) IndexKey(tablename, idx_name, idx_value string, _seq int64) string {
-	return concat(this.IndexName(tablename, idx_name, idx_value), fmt.Sprint(_seq))
+	return concat(this.IndexName(tablename, idx_name, idx_value), itoa(_seq))
 }
 
 func (this *keyLevel2) GetIdxSeqByKeySubName(idx_key, idx_name string) (seq int64) {
@@ -61,7 +60,7 @@ func (this *keyLevel2) MaxSeqForIdx(tablename, idx_name, idx_value string) strin
 }
 
 func (this *keyLevel2) PteToIdxStub(tablename string, id_value int64) string {
-	return concat(KEY2_PTE, tr(tablename), "_id_", fmt.Sprint(id_value))
+	return concat(KEY2_PTE, tr(tablename), "_id_", itoa(id_value))
 }
 
 func (this *keyLevel2) Tables(tablename string) (ss []string) {
@@ -89,7 +88,7 @@ func (this *keyLevel2) TableMQ(tablename string) string {
 }
 
 func tr(tablename string) (_r string) {
-	_r = fmt.Sprint(crc_32([]byte(tablename)))
+	_r = ui32toa(crc_32([]byte(tablename)))
 	return
 }
 
