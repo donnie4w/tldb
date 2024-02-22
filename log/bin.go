@@ -111,7 +111,7 @@ func (this *_binLog) WriteBytes(buf *Buffer, t int64) (err error) {
 	bs := buf.Bytes()
 	if bs != nil && len(bs) > 0 {
 		bakfn := ""
-		if err, bakfn = Binlog.Write(bs); err == nil && bakfn != "" {
+		if bakfn, err = Binlog.Write(bs); err == nil && bakfn != "" {
 			if fileNum, err := strconv.Atoi(bakfn[len(this.prename)+1 : len(bakfn)-len(this.sufname)-1]); err == nil {
 				LogStat.saveLogStat(int32(fileNum), t)
 			}
