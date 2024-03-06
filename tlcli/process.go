@@ -34,13 +34,13 @@ var _tcompactProtocolFactory = thrift.NewTCompactProtocolFactoryConf(&thrift.TCo
 var cliservice = &cliService{}
 
 type cliService struct {
-	isClose bool
-	server  thrift.TServerTransport
-	connNum int32
+	isClose         bool
+	serverTransport thrift.TServerTransport
+	connNum         int32
 }
 
 func (this *cliService) _server(_addr string, processor thrift.TProcessor, TLS bool, serverCrt, serverKey string) (err error) {
-	var serverTransport thrift.TServerTransport
+	// var serverTransport thrift.TServerTransport
 	if TLS {
 		cfg := &tls.Config{}
 		var cert tls.Certificate
@@ -51,13 +51,13 @@ func (this *cliService) _server(_addr string, processor thrift.TProcessor, TLS b
 		}
 		if err == nil {
 			cfg.Certificates = append(cfg.Certificates, cert)
-			serverTransport, err = thrift.NewTSSLServerSocketTimeout(_addr, cfg, sys.SocketTimeout)
+			this.serverTransport, err = thrift.NewTSSLServerSocketTimeout(_addr, cfg, sys.SocketTimeout)
 		}
-	} else if serverTransport, err = thrift.NewTServerSocketTimeout(_addr, sys.SocketTimeout); err == nil {
-		this.server = serverTransport
+	} else {
+		this.serverTransport, err = thrift.NewTServerSocketTimeout(_addr, sys.SocketTimeout)
 	}
-	if err == nil && serverTransport != nil {
-		server := thrift.NewTSimpleServer4(processor, serverTransport, nil, nil)
+	if err == nil && this.serverTransport != nil {
+		server := thrift.NewTSimpleServer4(processor, this.serverTransport, nil, nil)
 		if err = server.Listen(); err == nil {
 			s := fmt.Sprint("Tldb Client service start[", _addr, "]")
 			if TLS {
@@ -104,7 +104,7 @@ func (this *cliService) Close() (err error) {
 	defer util.Recovr()
 	if strings.TrimSpace(sys.CLIADDR) != "" {
 		this.isClose = true
-		err = this.server.Close()
+		err = this.serverTransport.Close()
 	}
 	return
 }
