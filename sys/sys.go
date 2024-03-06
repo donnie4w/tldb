@@ -10,8 +10,10 @@ import (
 	"bytes"
 	"os"
 	"sync/atomic"
+	"syscall"
 	"time"
 
+	"github.com/donnie4w/gofer/gosignal"
 	"github.com/donnie4w/simplelog/logging"
 	. "github.com/donnie4w/tldb/container"
 	"github.com/donnie4w/tldb/stub"
@@ -66,6 +68,7 @@ func Start() {
 		Cmd()
 	} else {
 		timlogo()
+		addStopEvent()
 		Service.BackForEach(func(_ int, s stub.Server) bool {
 			go func() {
 				defer func() { recover() }()
@@ -84,6 +87,12 @@ func Stop() {
 		s.Close()
 		return true
 	})
+}
+
+func addStopEvent() {
+	gosignal.ListenSignalEvent(func(sig os.Signal) {
+		Stop()
+	}, syscall.SIGTERM, syscall.SIGINT)
 }
 
 var (
