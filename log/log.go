@@ -9,6 +9,8 @@
 package log
 
 import (
+	"os"
+
 	"github.com/donnie4w/simplelog/logging"
 	"github.com/donnie4w/tldb/sys"
 )
@@ -24,6 +26,11 @@ var Binlog = logging.NewLogger()
 func LogInit() {
 	var err error
 	Binlog.SetGzipOn(true)
+	if err = os.MkdirAll(sys.DBFILEDIR+"/bin", 0777); err != nil {
+		sys.FmtLog("bin log init failed:", err)
+		panic("bin log init failed:" + err.Error())
+	}
+
 	if Binlog, err = Binlog.SetRollingFile(sys.DBFILEDIR+"/bin", sys.BINLOGNAME, sys.BINLOGSIZE, logging.MB); err != nil {
 		sys.FmtLog("bin log init failed:", err)
 		panic("bin log init failed:" + err.Error())
